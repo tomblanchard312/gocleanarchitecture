@@ -8,6 +8,8 @@ This document outlines the clean architecture structure used in our Go project. 
 .
 ├── .vscode/
 │   └── settings.json
+├── cmd/
+│   └── main.go
 ├── config/
 │   └── config.go
 ├── entities/
@@ -39,8 +41,6 @@ This document outlines the clean architecture structure used in our Go project. 
 ├── go.mod
 ├── go.sum
 ├── LICENSE
-├── main.go
-├── main.exe
 ├── README.Md
 └── server.log
 ```
