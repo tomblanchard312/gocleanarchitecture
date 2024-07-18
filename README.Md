@@ -19,6 +19,8 @@ The project is organized into the following layers:
 .
 ├── .vscode/
 │   └── settings.json
+├── cmd/
+│   └── main.go
 ├── config/
 │   └── config.go
 ├── entities/
@@ -50,8 +52,6 @@ The project is organized into the following layers:
 ├── go.mod
 ├── go.sum
 ├── LICENSE
-├── main.go
-├── main.exe
 ├── README.Md
 └── server.log
 ```
