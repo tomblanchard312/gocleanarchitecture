@@ -6,50 +6,89 @@ This document outlines the clean architecture structure used in our Go project. 
 
 ```
 .
-├── .vscode/
-│   └── settings.json
-├── cmd/
-│   └── main.go
-├── config/
-│   └── config.go
-├── entities/
-│   ├── blog_post.go
-│   └── blog_post_test.go
-├── errors/
-│   ├── errors.go
-│   └── errors_test.go
-├── frameworks/
-│   ├── db/
-│   │   ├── in_memory_blog_post_repository.go
-│   │   └── in_memory_blog_post_repository_test.go
-│   ├── logger/
-│   │   ├── logger.go
-│   │   └── logger_test.go
-│   └── web/
-│       ├── middleware/
-│       │   ├── logging.go
-│       │   └── recovery.go
-│       └── router.go
-├── interfaces/
-│   ├── blog_post_controller.go
-│   ├── blog_post_controller_test.go
-│   └── blog_post_repository.go
-├── usecases/
-│   ├── blog_post_usecase.go
-│   └── blog_post_usecase_test.go
-├── gocleanarchitecture.Md
-├── go.mod
-├── go.sum
-├── LICENSE
-├── README.Md
-└── server.log
+│   .gitignore
+│   go.mod
+│   go.sum
+│   GoCleanArchitecture.Md
+│   LICENSE
+│   README.Md
+│
+├───.vscode
+│       settings.json
+│
+├───cmd
+│       cmd.exe
+│       main.go
+│
+├───config
+│       config.go
+│
+├───entities
+│       blog_post.go
+│
+├───errors
+│       errors.go
+│
+├───frameworks
+│   ├───db
+│   │       in_memory_blog_post_repository.go
+│   │
+│   ├───logger
+│   │       logger.go
+│   │
+│   └───web
+│       │   router.go
+│       │
+│       └───middleware
+│               logging.go
+│               recovery.go
+│
+├───interfaces
+│       blog_post_controller.go
+│       blog_post_repository.go
+│
+├───tests
+│   ├───entities
+│   │       blog_post_test.go
+│   │
+│   ├───errors
+│   │       errors_test.go
+│   │
+│   ├───frameworks
+│   │   ├───db
+│   │   │       in_memory_blog_post_repository_test.go
+│   │   │
+│   │   └───logger
+│   │           logger_test.go
+│   │
+│   ├───interfaces
+│   │       blog_post_controller_test.go
+│   │
+│   └───usecases
+│           blog_post_usecase_test.go
+│
+└───usecases
+        blog_post_usecase.go
 ```
 
 ## Directory Explanations
 
+### Root Directory Files
+
+- `.gitignore`: Specifies intentionally untracked files to ignore.
+- `go.mod` and `go.sum`: Go module definition and checksum files.
+- `GoCleanArchitecture.Md`: This documentation file.
+- `LICENSE`: The license file for the project.
+- `README.Md`: Project readme file.
+
 ### .vscode
 
 - `settings.json`: VS Code specific settings for the project.
+
+### cmd
+
+- `main.go`: The entry point of the application.
+- `cmd.exe`: The compiled executable of the application.
 
 ### config
 
@@ -58,12 +97,10 @@ This document outlines the clean architecture structure used in our Go project. 
 ### entities
 
 - `blog_post.go`: Defines the BlogPost entity and its properties.
-- `blog_post_test.go`: Contains unit tests for the BlogPost entity.
 
 ### errors
 
 - `errors.go`: Defines custom error types and error handling utilities.
-- `errors_test.go`: Contains unit tests for the custom error types and utilities.
 
 ### frameworks
 
@@ -72,12 +109,10 @@ The `frameworks` directory contains implementations of external tools and framew
 #### db
 
 - `in_memory_blog_post_repository.go`: Implements the blog post repository interface using in-memory storage.
-- `in_memory_blog_post_repository_test.go`: Contains unit tests for the in-memory repository.
 
 #### logger
 
 - `logger.go`: Implements a custom logging system.
-- `logger_test.go`: Contains unit tests for the logger implementation.
 
 #### web
 
@@ -89,24 +124,23 @@ The `frameworks` directory contains implementations of external tools and framew
 ### interfaces
 
 - `blog_post_controller.go`: Handles HTTP requests and responses for blog post operations.
-- `blog_post_controller_test.go`: Contains unit tests for the blog post controller.
 - `blog_post_repository.go`: Defines the interface for data persistence operations.
 
 ### usecases
 
 - `blog_post_usecase.go`: Defines the use cases for blog post operations (e.g., Create, Read, Update, Delete).
-- `blog_post_usecase_test.go`: Contains unit tests for the blog post use cases.
 
-### Root Directory Files
+### tests
 
-- `gocleanarchitecture.Md`: Documentation about the clean architecture implementation.
-- `go.mod` and `go.sum`: Go module definition and checksum files.
-- `LICENSE`: The license file for the project.
-- `main.go`: The entry point of the application.
-- `main.exe`: The compiled executable of the application.
-- `README.Md`: Project readme file.
-- `server.log`: Log file for the server.
+This directory contains all the test files, mirroring the structure of the main application.
 
+- `entities/blog_post_test.go`: Tests for the BlogPost entity.
+- `errors/errors_test.go`: Tests for custom error types and utilities.
+- `frameworks/db/in_memory_blog_post_repository_test.go`: Tests for the in-memory repository.
+- `frameworks/logger/logger_test.go`: Tests for the logger implementation.
+- `interfaces/blog_post_controller_test.go`: Tests for the blog post controller.
+- `usecases/blog_post_usecase_test.go`: Tests for the blog post use cases.
+  
 ## Clean Architecture Principles
 
 This structure adheres to the following clean architecture principles:

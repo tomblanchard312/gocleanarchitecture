@@ -1,5 +1,8 @@
 # Go Clean Architecture Example
 
+[![Go Version](https://img.shields.io/github/go-mod/go-version/tomblanchard312/gocleanarchitecture)](https://github.com/tomblanchard312/gocleanarchitecture/blob/main/go.mod)
+[![Last Commit](https://img.shields.io/github/last-commit/tomblanchard312/gocleanarchitecture)](https://github.com/tomblanchard312/gocleanarchitecture/commits/main)
+[![Open Issues](https://img.shields.io/github/issues/tomblanchard312/gocleanarchitecture)](https://github.com/tomblanchard312/gocleanarchitecture/issues)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This is an example project demonstrating Clean Architecture principles in Go. It is a simple blog application that allows you to create and retrieve blog posts. The project structure is designed to separate concerns and make the application easy to maintain and test.
@@ -17,43 +20,69 @@ The project is organized into the following layers:
 
 ```
 .
-├── .vscode/
-│   └── settings.json
-├── cmd/
-│   └── main.go
-├── config/
-│   └── config.go
-├── entities/
-│   ├── blog_post.go
-│   └── blog_post_test.go
-├── errors/
-│   ├── errors.go
-│   └── errors_test.go
-├── frameworks/
-│   ├── db/
-│   │   ├── in_memory_blog_post_repository.go
-│   │   └── in_memory_blog_post_repository_test.go
-│   ├── logger/
-│   │   ├── logger.go
-│   │   └── logger_test.go
-│   └── web/
-│       ├── middleware/
-│       │   ├── logging.go
-│       │   └── recovery.go
-│       └── router.go
-├── interfaces/
-│   ├── blog_post_controller.go
-│   ├── blog_post_controller_test.go
-│   └── blog_post_repository.go
-├── usecases/
-│   ├── blog_post_usecase.go
-│   └── blog_post_usecase_test.go
-├── gocleanarchitecture.Md
-├── go.mod
-├── go.sum
-├── LICENSE
-├── README.Md
-└── server.log
+│   .gitignore
+│   go.mod
+│   go.sum
+│   GoCleanArchitecture.Md
+│   LICENSE
+│   README.Md
+│
+├───.vscode
+│       settings.json
+│
+├───cmd
+│       cmd.exe
+│       main.go
+│
+├───config
+│       config.go
+│
+├───entities
+│       blog_post.go
+│
+├───errors
+│       errors.go
+│
+├───frameworks
+│   ├───db
+│   │       in_memory_blog_post_repository.go
+│   │
+│   ├───logger
+│   │       logger.go
+│   │
+│   └───web
+│       │   router.go
+│       │
+│       └───middleware
+│               logging.go
+│               recovery.go
+│
+├───interfaces
+│       blog_post_controller.go
+│       blog_post_repository.go
+│
+├───tests
+│   ├───entities
+│   │       blog_post_test.go
+│   │
+│   ├───errors
+│   │       errors_test.go
+│   │
+│   ├───frameworks
+│   │   ├───db
+│   │   │       in_memory_blog_post_repository_test.go
+│   │   │
+│   │   └───logger
+│   │           logger_test.go
+│   │
+│   ├───interfaces
+│   │       blog_post_controller_test.go
+│   │
+│   └───usecases
+│           blog_post_usecase_test.go
+│
+└───usecases
+        blog_post_usecase.go
 ```
 
 ## Why Clean Architecture?
@@ -125,11 +154,40 @@ curl http://localhost:8080/blogposts
 go test ./...
 ```
 
+To run tests for a specific package:
+
+```sh
+go test ./tests/entities
+go test ./tests/usecases
+go test ./tests/interfaces
+go test ./tests/frameworks/db
+go test ./tests/frameworks/logger
+```
+
+To run a specific test function:
+
+```sh
+go test ./tests/entities -run TestBlogPostCreation
+go test ./tests/usecases -run TestCreateBlogPost
+```
+
+To run tests with verbose output:
+
+```sh
+go test -v ./tests/...
+```
+
+To run tests and see coverage:
+
+```sh
+go test ./tests/... -coverprofile=coverage.out
+go tool cover -html=coverage.out
+```
+
 ### Logging
 
 Logs are written to server.log for debugging purposes. Ensure the log file is writable and check it for any server-related errors.
 License
-
 
 ## Error Handling
 
@@ -157,5 +215,3 @@ This project is licensed under the MIT License. See the LICENSE file for details
 ## Acknowledgments
 
 - [The Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) by Robert C. Martin
-  
-#

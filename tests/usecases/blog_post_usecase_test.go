@@ -1,8 +1,9 @@
-package usecases
+package usecases_test
 
 import (
 	"gocleanarchitecture/entities"
 	"gocleanarchitecture/frameworks/logger"
+	"gocleanarchitecture/usecases"
 	"testing"
 )
 
@@ -29,7 +30,7 @@ func (m *MockLogger) Error(msg string, fields ...logger.LogField) {}
 func TestCreateBlogPost(t *testing.T) {
 	repo := &MockBlogPostRepository{}
 	mockLogger := &MockLogger{}
-	usecase := BlogPostUseCase{Repo: repo, Logger: mockLogger}
+	usecase := usecases.BlogPostUseCase{Repo: repo, Logger: mockLogger}
 
 	blogPost := entities.BlogPost{ID: "1", Title: "Test Title", Content: "Test Content"}
 	err := usecase.CreateBlogPost(blogPost)
@@ -45,7 +46,7 @@ func TestCreateBlogPost(t *testing.T) {
 func TestGetAllBlogPosts(t *testing.T) {
 	repo := &MockBlogPostRepository{}
 	mockLogger := &MockLogger{}
-	usecase := BlogPostUseCase{Repo: repo, Logger: mockLogger}
+	usecase := usecases.BlogPostUseCase{Repo: repo, Logger: mockLogger}
 
 	blogPost1 := entities.BlogPost{ID: "1", Title: "Title 1", Content: "Content 1"}
 	blogPost2 := entities.BlogPost{ID: "2", Title: "Title 2", Content: "Content 2"}

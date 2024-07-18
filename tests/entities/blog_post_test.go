@@ -1,9 +1,12 @@
-package entities
+package entities_test
 
-import "testing"
+import (
+	"gocleanarchitecture/entities"
+	"testing"
+)
 
 func TestBlogPostCreation(t *testing.T) {
-	blogPost := BlogPost{ID: "1", Title: "Test Title", Content: "Test Content"}
+	blogPost := entities.BlogPost{ID: "1", Title: "Test Title", Content: "Test Content"}
 
 	if blogPost.ID != "1" {
 		t.Fatalf("expected ID to be '1', got %s", blogPost.ID)

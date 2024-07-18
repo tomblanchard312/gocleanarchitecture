@@ -1,12 +1,13 @@
-package db
+package db_test
 
 import (
 	"gocleanarchitecture/entities"
+	"gocleanarchitecture/frameworks/db"
 	"testing"
 )
 
 func TestSaveAndFindAll(t *testing.T) {
-	repo := NewInMemoryBlogPostRepository()
+	repo := db.NewInMemoryBlogPostRepository()
 
 	blogPost1 := entities.BlogPost{ID: "1", Title: "Title 1", Content: "Content 1"}
 	blogPost2 := entities.BlogPost{ID: "2", Title: "Title 2", Content: "Content 2"}

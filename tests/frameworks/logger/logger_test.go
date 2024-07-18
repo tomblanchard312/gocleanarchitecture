@@ -1,7 +1,8 @@
-package logger
+package logger_test
 
 import (
 	"encoding/json"
+	"gocleanarchitecture/frameworks/logger"
 	"os"
 	"strings"
 	"testing"
@@ -14,7 +15,7 @@ func TestNewLogger(t *testing.T) {
 	}
 	defer os.Remove(tempFile.Name())
 
-	logger, err := NewLogger("info", tempFile.Name())
+	log, err := logger.NewLogger("info", tempFile.Name())
 	if err != nil {
 		t.Fatalf("Failed to create logger: %v", err)
 	}
@@ -31,11 +32,11 @@ func TestNewLogger(t *testing.T) {
 	for _, tc := range testCases {
 		switch tc.level {
 		case "info":
-			logger.Info(tc.message)
+			log.Info(tc.message)
 		case "warn":
-			logger.Warn(tc.message)
+			log.Warn(tc.message)
 		case "error":
-			logger.Error(tc.message)
+			log.Error(tc.message)
 		}
 	}
 

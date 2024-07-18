@@ -1,13 +1,13 @@
 package errors
 
 import (
-	"errors"
+	"gocleanarchitecture/errors"
 	"testing"
 )
 
 func TestNew(t *testing.T) {
 	msg := "test error"
-	err := New(msg)
+	err := errors.New(msg)
 
 	if err == nil {
 		t.Fatal("Expected error, got nil")
@@ -21,7 +21,7 @@ func TestNew(t *testing.T) {
 func TestWrap(t *testing.T) {
 	originalErr := errors.New("original error")
 	msg := "wrapped error"
-	wrappedErr := Wrap(originalErr, msg)
+	wrappedErr := errors.Wrap(originalErr, msg)
 
 	if wrappedErr == nil {
 		t.Fatal("Expected wrapped error, got nil")
@@ -32,7 +32,7 @@ func TestWrap(t *testing.T) {
 		t.Errorf("Expected error message '%s', got '%s'", expectedMsg, wrappedErr.Error())
 	}
 
-	appErr, ok := wrappedErr.(*AppError)
+	appErr, ok := wrappedErr.(*errors.AppError)
 	if !ok {
 		t.Fatal("Expected *AppError type")
 	}

@@ -1,9 +1,10 @@
-package interfaces
+package interfaces_test
 
 import (
 	"bytes"
 	"encoding/json"
 	"gocleanarchitecture/entities"
+	"gocleanarchitecture/interfaces"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,7 +26,7 @@ func (m *MockBlogPostUseCase) GetAllBlogPosts() ([]entities.BlogPost, error) {
 
 func TestCreateBlogPostHandler(t *testing.T) {
 	mockUseCase := &MockBlogPostUseCase{}
-	controller := BlogPostController{BlogPostUseCase: mockUseCase} // Use the interface here
+	controller := interfaces.BlogPostController{BlogPostUseCase: mockUseCase}
 
 	blogPost := entities.BlogPost{ID: "1", Title: "Test Title", Content: "Test Content"}
 	body, _ := json.Marshal(blogPost)
@@ -53,7 +54,7 @@ func TestGetAllBlogPostsHandler(t *testing.T) {
 			{ID: "2", Title: "Title 2", Content: "Content 2"},
 		},
 	}
-	controller := BlogPostController{BlogPostUseCase: mockUseCase} // Use the interface here
+	controller := interfaces.BlogPostController{BlogPostUseCase: mockUseCase}
 
 	req, err := http.NewRequest("GET", "/blogposts", nil)
 	if err != nil {
