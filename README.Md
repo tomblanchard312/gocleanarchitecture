@@ -119,7 +119,7 @@ Clean Architecture promotes separation of concerns, making your codebase easier 
 ## Prerequisites
 
 - [Go](https://golang.org/dl/) 1.17 or higher
-- SQLite3 (for this sample you can use SQL, Firebase, Postgresql or whatever you choose.)
+- SQLite3 (for this sample) You can use SQL, Firebase, Postgresql or whatever you choose.
 
 ### Installation
 
