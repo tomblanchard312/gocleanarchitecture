@@ -2,41 +2,56 @@ package usecases
 
 import (
 	"gocleanarchitecture/entities"
-	"gocleanarchitecture/errors"
 	"gocleanarchitecture/frameworks/logger"
+	"gocleanarchitecture/interfaces"
 )
 
-type BlogPostRepository interface {
-	Save(blogPost entities.BlogPost) error
-	FindAll() ([]entities.BlogPost, error)
-}
-
-type BlogPostUseCaseInterface interface {
-	CreateBlogPost(blogPost entities.BlogPost) error
-	GetAllBlogPosts() ([]entities.BlogPost, error)
-}
-
 type BlogPostUseCase struct {
-	Repo   BlogPostRepository
+	Repo   interfaces.BlogPostRepository
 	Logger logger.Logger
 }
 
-func (uc *BlogPostUseCase) CreateBlogPost(blogPost entities.BlogPost) error {
-	err := uc.Repo.Save(blogPost)
+func (u *BlogPostUseCase) CreateBlogPost(blogPost *entities.BlogPost) error {
+	err := u.Repo.Save(blogPost)
 	if err != nil {
-		uc.Logger.Error("Failed to create blog post", logger.Field("error", err))
-		return errors.Wrap(err, "failed to create blog post")
+		u.Logger.Error("Failed to create blog post", logger.Field("error", err))
+		return err
 	}
-	uc.Logger.Info("Blog post created successfully", logger.Field("id", blogPost.ID))
 	return nil
 }
 
-func (uc *BlogPostUseCase) GetAllBlogPosts() ([]entities.BlogPost, error) {
-	posts, err := uc.Repo.FindAll()
+func (u *BlogPostUseCase) GetAllBlogPosts() ([]*entities.BlogPost, error) {
+	blogPosts, err := u.Repo.FindAll()
 	if err != nil {
-		uc.Logger.Error("Failed to get all blog posts", logger.Field("error", err))
-		return nil, errors.Wrap(err, "failed to get all blog posts")
+		u.Logger.Error("Failed to get all blog posts", logger.Field("error", err))
+		return nil, err
 	}
-	uc.Logger.Info("Retrieved all blog posts", logger.Field("count", len(posts)))
-	return posts, nil
+	return blogPosts, nil
+}
+
+func (u *BlogPostUseCase) GetBlogPost(id string) (*entities.BlogPost, error) {
+	blogPost, err := u.Repo.FindByID(id)
+	if err != nil {
+		u.Logger.Error("Failed to get blog post", logger.Field("error", err), logger.Field("id", id))
+		return nil, err
+	}
+	return blogPost, nil
+}
+
+func (u *BlogPostUseCase) UpdateBlogPost(blogPost *entities.BlogPost) error {
+	err := u.Repo.Save(blogPost)
+	if err != nil {
+		u.Logger.Error("Failed to update blog post", logger.Field("error", err), logger.Field("id", blogPost.ID))
+		return err
+	}
+	return nil
+}
+
+func (u *BlogPostUseCase) DeleteBlogPost(id string) error {
+	err := u.Repo.Delete(id)
+	if err != nil {
+		u.Logger.Error("Failed to delete blog post", logger.Field("error", err), logger.Field("id", id))
+		return err
+	}
+	return nil
 }

@@ -21,8 +21,10 @@ The project is organized into the following layers:
 ```
 .
 │   .gitignore
+│   coverage
 │   go.mod
 │   go.sum
+│   gocleanarchitecture.exe
 │   GoCleanArchitecture.Md
 │   LICENSE
 │   README.Md
@@ -31,8 +33,11 @@ The project is organized into the following layers:
 │       settings.json
 │
 ├───cmd
-│       cmd.exe
+│       blog.db
+│       blogposts.json
+│       gocleanarchitecture.exe
 │       main.go
+│       server.log
 │
 ├───config
 │       config.go
@@ -45,7 +50,11 @@ The project is organized into the following layers:
 │
 ├───frameworks
 │   ├───db
-│   │       in_memory_blog_post_repository.go
+│   │   │   in_memory_blog_post_repository.go
+│   │   │
+│   │   └───sqlite
+│   │           blog_post_repository.go
+│   │           sqlite.go
 │   │
 │   ├───logger
 │   │       logger.go
@@ -71,6 +80,7 @@ The project is organized into the following layers:
 │   ├───frameworks
 │   │   ├───db
 │   │   │       in_memory_blog_post_repository_test.go
+│   │   │       sqlite_blog_post_repository_test.go
 │   │   │
 │   │   └───logger
 │   │           logger_test.go
@@ -96,9 +106,20 @@ Clean Architecture promotes separation of concerns, making your codebase easier 
 
 ## Getting Started
 
-### Prerequisites
+## Features
+
+- CRUD operations for blog posts
+- Clean Architecture implementation
+- SQLite database integration
+- In-memory database option
+- Custom error handling
+- Structured logging
+- Middleware for logging and recovery
+
+## Prerequisites
 
 - [Go](https://golang.org/dl/) 1.17 or higher
+- SQLite3 (for this sample you can use SQL, Firebase, Postgresql or whatever you choose.)
 
 ### Installation
 
@@ -121,18 +142,25 @@ Clean Architecture promotes separation of concerns, making your codebase easier 
 
     ```sh
     cd cmd
-    go build -o main.exe
+    go build -o gocleanarchitecture.exe ./cmd
     ```
 
 2. Run the application:
 
     ```sh
-    ./main.exe
+    ./gocleanarchitecture.exe
     ```
 
 3. The server will start on port 8080. You can test the endpoints using curl or any API testing tool.
 
-### API Endpoints
+## API Endpoints
+
+- `POST /blogposts`: Create a new blog post
+- `GET /blogposts`: Retrieve all blog posts
+- `GET /blogposts/{id}`: Retrieve a specific blog post
+- `PUT /blogposts/{id}`: Update a blog post
+- `DELETE /blogposts/{id}`: Delete a blog post
+
 
 #### Create a Blog Post
 
@@ -197,6 +225,16 @@ This project uses custom error types defined in the `errors` package. All errors
 
 - [Gorilla Mux](https://github.com/gorilla/mux) for HTTP routing
 - [Viper](https://github.com/spf13/viper) for configuration management
+  
+
+## Configuration
+
+The application can be configured using environment variables:
+
+- `SERVER_PORT`: The port on which the server will run (default: ":8080")
+- `DB_PATH`: The path to the SQLite database file (default: "./blog.db")
+- `LOG_LEVEL`: The logging level (default: "info")
+- `LOG_FILE`: The path to the log file (default: "server.log")
 
 ## Contributing
 

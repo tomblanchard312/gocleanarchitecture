@@ -1,15 +1,14 @@
 package main
 
 import (
-	"log"
-	"net/http"
-
 	"gocleanarchitecture/config"
-	"gocleanarchitecture/frameworks/db"
+	"gocleanarchitecture/frameworks/db/sqlite"
 	"gocleanarchitecture/frameworks/logger"
 	"gocleanarchitecture/frameworks/web"
 	"gocleanarchitecture/interfaces"
 	"gocleanarchitecture/usecases"
+	"log"
+	"net/http"
 )
 
 func main() {
@@ -18,23 +17,23 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
+	db, err := sqlite.InitDB(cfg.DBPath)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer db.Close()
+
 	customLogger, err := logger.NewLogger(cfg.LogLevel, cfg.LogFile)
 	if err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
 
-	blogPostRepo := db.NewInMemoryBlogPostRepository()
-	blogPostUseCase := &usecases.BlogPostUseCase{Repo: blogPostRepo, Logger: customLogger}
-	blogPostController := &interfaces.BlogPostController{BlogPostUseCase: blogPostUseCase}
-	router := web.NewRouter(blogPostController, customLogger)
+	repo := sqlite.NewSQLiteBlogPostRepository(db)
+	blogPostUseCase := &usecases.BlogPostUseCase{Repo: repo, Logger: customLogger}
+	controller := &interfaces.BlogPostController{BlogPostUseCase: blogPostUseCase}
 
-	customLogger.Info("Starting server",
-		logger.LogField{Key: "port", Value: cfg.ServerPort},
-	)
-	err = http.ListenAndServe(cfg.ServerPort, router)
-	if err != nil {
-		customLogger.Error("Server failed to start",
-			logger.LogField{Key: "error", Value: err},
-		)
-	}
+	router := web.NewRouter(controller, customLogger)
+
+	customLogger.Info("Starting server", logger.Field("port", cfg.ServerPort))
+	log.Fatal(http.ListenAndServe(cfg.ServerPort, router))
 }

@@ -7,8 +7,10 @@ This document outlines the clean architecture structure used in our Go project. 
 ```
 .
 │   .gitignore
+│   coverage
 │   go.mod
 │   go.sum
+│   gocleanarchitecture.exe
 │   GoCleanArchitecture.Md
 │   LICENSE
 │   README.Md
@@ -17,8 +19,11 @@ This document outlines the clean architecture structure used in our Go project. 
 │       settings.json
 │
 ├───cmd
-│       cmd.exe
+│       blog.db
+│       blogposts.json
+│       gocleanarchitecture.exe
 │       main.go
+│       server.log
 │
 ├───config
 │       config.go
@@ -31,7 +36,11 @@ This document outlines the clean architecture structure used in our Go project. 
 │
 ├───frameworks
 │   ├───db
-│   │       in_memory_blog_post_repository.go
+│   │   │   in_memory_blog_post_repository.go
+│   │   │
+│   │   └───sqlite
+│   │           blog_post_repository.go
+│   │           sqlite.go
 │   │
 │   ├───logger
 │   │       logger.go
@@ -57,6 +66,7 @@ This document outlines the clean architecture structure used in our Go project. 
 │   ├───frameworks
 │   │   ├───db
 │   │   │       in_memory_blog_post_repository_test.go
+│   │   │       sqlite_blog_post_repository_test.go
 │   │   │
 │   │   └───logger
 │   │           logger_test.go
@@ -76,7 +86,9 @@ This document outlines the clean architecture structure used in our Go project. 
 ### Root Directory Files
 
 - `.gitignore`: Specifies intentionally untracked files to ignore.
+- `coverage`: Contains code coverage reports.
 - `go.mod` and `go.sum`: Go module definition and checksum files.
+- `gocleanarchitecture.exe`: The compiled executable of the application.
 - `GoCleanArchitecture.Md`: This documentation file.
 - `LICENSE`: The license file for the project.
 - `README.Md`: Project readme file.
@@ -88,7 +100,10 @@ This document outlines the clean architecture structure used in our Go project. 
 ### cmd
 
 - `main.go`: The entry point of the application.
-- `cmd.exe`: The compiled executable of the application.
+- `blog.db`: SQLite database file.
+- `blogposts.json`: JSON file for storing blog posts (possibly used for testing or data export/import).
+- `gocleanarchitecture.exe`: The compiled executable of the application.
+- `server.log`: Log file for server operations.
 
 ### config
 
@@ -109,6 +124,9 @@ The `frameworks` directory contains implementations of external tools and framew
 #### db
 
 - `in_memory_blog_post_repository.go`: Implements the blog post repository interface using in-memory storage.
+- `sqlite/`:
+  - `blog_post_repository.go`: SQLite implementation of the blog post repository.
+  - `sqlite.go`: SQLite database initialization and utility functions.
 
 #### logger
 
@@ -136,11 +154,13 @@ This directory contains all the test files, mirroring the structure of the main 
 
 - `entities/blog_post_test.go`: Tests for the BlogPost entity.
 - `errors/errors_test.go`: Tests for custom error types and utilities.
-- `frameworks/db/in_memory_blog_post_repository_test.go`: Tests for the in-memory repository.
+- `frameworks/db/`:
+  - `in_memory_blog_post_repository_test.go`: Tests for the in-memory repository.
+  - `sqlite_blog_post_repository_test.go`: Tests for the SQLite repository.
 - `frameworks/logger/logger_test.go`: Tests for the logger implementation.
 - `interfaces/blog_post_controller_test.go`: Tests for the blog post controller.
 - `usecases/blog_post_usecase_test.go`: Tests for the blog post use cases.
-  
+
 ## Clean Architecture Principles
 
 This structure adheres to the following clean architecture principles:
@@ -173,4 +193,5 @@ This means that:
 
 ## Conclusion
 
-This clean architecture structure provides a solid foundation for building scalable, maintainable, and testable Go applications. It separates concerns, promotes independence from external frameworks, and enhances overall code quality.
+This clean architecture structure provides a solid foundation for building scalable, maintainable, and testable Go applications. It separates concerns, promotes independence from external frameworks, and enhances overall code quality. 
+The inclusion of both in-memory and SQLite database implementations demonstrates the flexibility of this architecture in adapting to different storage solutions.

@@ -8,14 +8,19 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func NewRouter(blogPostController *interfaces.BlogPostController, log logger.Logger) *mux.Router {
+func NewRouter(controller *interfaces.BlogPostController, logger logger.Logger) *mux.Router {
 	router := mux.NewRouter()
 
-	router.Use(middleware.LoggingMiddleware(log))
-	router.Use(middleware.RecoveryMiddleware(log))
+	// Add middleware
+	router.Use(middleware.LoggingMiddleware(logger))
+	router.Use(middleware.RecoveryMiddleware(logger))
 
-	router.HandleFunc("/blogposts", blogPostController.CreateBlogPost).Methods("POST")
-	router.HandleFunc("/blogposts", blogPostController.GetAllBlogPosts).Methods("GET")
+	// Define routes
+	router.HandleFunc("/blogposts", controller.CreateBlogPost).Methods("POST")
+	router.HandleFunc("/blogposts", controller.GetAllBlogPosts).Methods("GET")
+	router.HandleFunc("/blogposts/{id}", controller.GetBlogPost).Methods("GET")
+	router.HandleFunc("/blogposts/{id}", controller.UpdateBlogPost).Methods("PUT")
+	router.HandleFunc("/blogposts/{id}", controller.DeleteBlogPost).Methods("DELETE")
 
 	return router
 }

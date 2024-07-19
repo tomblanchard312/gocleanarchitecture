@@ -1,19 +1,11 @@
 package entities
 
-import "gocleanarchitecture/errors"
+import "time"
 
 type BlogPost struct {
-	ID      string
-	Title   string
-	Content string
-}
-
-func (bp *BlogPost) Validate() error {
-	if bp.Title == "" {
-		return errors.New("title cannot be empty")
-	}
-	if bp.Content == "" {
-		return errors.New("content cannot be empty")
-	}
-	return nil
+	ID        string
+	Title     string
+	Content   string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
