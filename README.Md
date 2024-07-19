@@ -161,8 +161,7 @@ Clean Architecture promotes separation of concerns, making your codebase easier 
 - `PUT /blogposts/{id}`: Update a blog post
 - `DELETE /blogposts/{id}`: Delete a blog post
 
-
-#### Create a Blog Post
+### Create a Blog Post
 
 ```sh
 curl -X POST http://localhost:8080/blogposts -H "Content-Type: application/json" -d '{"ID":"1", "Title":"Test Title", "Content":"Test Content"}'
@@ -176,7 +175,7 @@ curl http://localhost:8080/blogposts
 
 ### Running Tests
 
- To run all tests:
+To run all tests:
 
 ```sh
 go test ./...
@@ -226,7 +225,6 @@ This project uses custom error types defined in the `errors` package. All errors
 - [Gorilla Mux](https://github.com/gorilla/mux) for HTTP routing
 - [Viper](https://github.com/spf13/viper) for configuration management
   
-
 ## Configuration
 
 The application can be configured using environment variables:
