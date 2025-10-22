@@ -9,10 +9,10 @@ import (
 )
 
 type BlogPostUseCase interface {
-	CreateBlogPost(blogPost *entities.BlogPost) error
+	CreateBlogPost(id, title, content string) (*entities.BlogPost, error)
 	GetAllBlogPosts() ([]*entities.BlogPost, error)
 	GetBlogPost(id string) (*entities.BlogPost, error)
-	UpdateBlogPost(blogPost *entities.BlogPost) error
+	UpdateBlogPost(id, title, content string) (*entities.BlogPost, error)
 	DeleteBlogPost(id string) error
 }
 
@@ -21,20 +21,27 @@ type BlogPostController struct {
 }
 
 func (c *BlogPostController) CreateBlogPost(w http.ResponseWriter, r *http.Request) {
-	var blogPost entities.BlogPost
-	err := json.NewDecoder(r.Body).Decode(&blogPost)
+	var request struct {
+		ID      string `json:"id"`
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
+		return
+	}
+
+	blogPost, err := c.BlogPostUseCase.CreateBlogPost(request.ID, request.Title, request.Content)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = c.BlogPostUseCase.CreateBlogPost(&blogPost)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(blogPost)
 }
 
 func (c *BlogPostController) GetAllBlogPosts(w http.ResponseWriter, r *http.Request) {
@@ -44,6 +51,7 @@ func (c *BlogPostController) GetAllBlogPosts(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(blogPosts)
 }
 
@@ -62,6 +70,7 @@ func (c *BlogPostController) GetBlogPost(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(blogPost)
 }
 
@@ -69,21 +78,26 @@ func (c *BlogPostController) UpdateBlogPost(w http.ResponseWriter, r *http.Reque
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	var blogPost entities.BlogPost
-	err := json.NewDecoder(r.Body).Decode(&blogPost)
+	var request struct {
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
+		return
+	}
+
+	blogPost, err := c.BlogPostUseCase.UpdateBlogPost(id, request.Title, request.Content)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	blogPost.ID = id
-	err = c.BlogPostUseCase.UpdateBlogPost(&blogPost)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(blogPost)
 }
 
 func (c *BlogPostController) DeleteBlogPost(w http.ResponseWriter, r *http.Request) {

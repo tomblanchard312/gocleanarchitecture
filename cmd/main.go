@@ -28,8 +28,10 @@ func main() {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
 
+	// Create adapters and use cases with proper dependency injection
 	repo := sqlite.NewSQLiteBlogPostRepository(db)
-	blogPostUseCase := &usecases.BlogPostUseCase{Repo: repo, Logger: customLogger}
+	useCaseLogger := logger.NewUseCaseLoggerAdapter(customLogger)
+	blogPostUseCase := usecases.NewBlogPostUseCase(repo, useCaseLogger)
 	controller := &interfaces.BlogPostController{BlogPostUseCase: blogPostUseCase}
 
 	router := web.NewRouter(controller, customLogger)

@@ -2,7 +2,6 @@ package usecases_test
 
 import (
 	"gocleanarchitecture/entities"
-	"gocleanarchitecture/frameworks/logger"
 	"gocleanarchitecture/usecases"
 	"testing"
 )
@@ -35,24 +34,24 @@ func (m *MockBlogPostRepository) Delete(id string) error {
 
 type MockLogger struct{}
 
-func (m *MockLogger) Debug(msg string, fields ...logger.LogField) {}
-func (m *MockLogger) Info(msg string, fields ...logger.LogField)  {}
-func (m *MockLogger) Warn(msg string, fields ...logger.LogField)  {}
-func (m *MockLogger) Error(msg string, fields ...logger.LogField) {}
+func (m *MockLogger) Error(msg string, fields ...interface{}) {}
 
 func TestCreateBlogPost(t *testing.T) {
 	repo := &MockBlogPostRepository{blogPosts: make(map[string]*entities.BlogPost)}
 	mockLogger := &MockLogger{}
 	usecase := usecases.BlogPostUseCase{Repo: repo, Logger: mockLogger}
 
-	blogPost := &entities.BlogPost{ID: "1", Title: "Test Title", Content: "Test Content"}
-	err := usecase.CreateBlogPost(blogPost)
+	blogPost, err := usecase.CreateBlogPost("1", "Test Title", "Test Content")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
 	if len(repo.blogPosts) != 1 {
 		t.Fatalf("expected 1 blog post, got %d", len(repo.blogPosts))
+	}
+
+	if blogPost.ID != "1" || blogPost.Title != "Test Title" || blogPost.Content != "Test Content" {
+		t.Fatalf("blog post not created correctly: %v", blogPost)
 	}
 }
 
@@ -100,18 +99,20 @@ func TestUpdateBlogPost(t *testing.T) {
 	mockLogger := &MockLogger{}
 	usecase := usecases.BlogPostUseCase{Repo: repo, Logger: mockLogger}
 
-	blogPost := &entities.BlogPost{ID: "1", Title: "Original Title", Content: "Original Content"}
-	repo.Save(blogPost)
-
-	updatedBlogPost := &entities.BlogPost{ID: "1", Title: "Updated Title", Content: "Updated Content"}
-	err := usecase.UpdateBlogPost(updatedBlogPost)
+	// Create initial blog post
+	_, err := usecase.CreateBlogPost("1", "Original Title", "Original Content")
 	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
+		t.Fatalf("expected no error creating blog post, got %v", err)
 	}
 
-	result, _ := repo.FindByID("1")
-	if result.Title != "Updated Title" || result.Content != "Updated Content" {
-		t.Fatalf("blog post was not updated correctly: %v", result)
+	// Update the blog post
+	updatedBlogPost, err := usecase.UpdateBlogPost("1", "Updated Title", "Updated Content")
+	if err != nil {
+		t.Fatalf("expected no error updating, got %v", err)
+	}
+
+	if updatedBlogPost.Title != "Updated Title" || updatedBlogPost.Content != "Updated Content" {
+		t.Fatalf("blog post was not updated correctly: %v", updatedBlogPost)
 	}
 }
 
