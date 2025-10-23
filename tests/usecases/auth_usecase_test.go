@@ -412,4 +412,3 @@ func TestRegisterTokenGenerationError(t *testing.T) {
 		t.Errorf("Expected 'failed to generate authentication token' error, got %v", err)
 	}
 }
-

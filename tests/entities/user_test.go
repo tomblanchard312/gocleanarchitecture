@@ -226,4 +226,3 @@ func TestSanitize(t *testing.T) {
 		t.Error("Expected sanitized user to have same email")
 	}
 }
-
