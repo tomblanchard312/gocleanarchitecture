@@ -396,3 +396,19 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Environment files with secrets
+.env
+
+# AI/Copilot Instructions (project-specific)
+.github/copilot-instructions.md
+
+# Go binaries
+*.exe
+gocleanarchitecture
+main
+
+# Go specific
+*.db
+*.log
+coverage

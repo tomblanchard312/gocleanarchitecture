@@ -109,17 +109,22 @@ Clean Architecture promotes separation of concerns, making your codebase easier 
 ## Features
 
 - CRUD operations for blog posts
+- **User Authentication & Authorization**: JWT-based authentication with secure password hashing
 - Clean Architecture implementation
-- SQLite database integration
-- In-memory database option
-- Custom error handling
+- **Multiple Database Backends**: SQLite, Supabase, In-Memory
+- Custom error handling with domain validation
 - Structured logging
-- Middleware for logging and recovery
+- Middleware for logging, recovery, and authentication
+- Rich domain model with business rules
+- User profile management with avatar support
 
 ## Prerequisites
 
 - [Go](https://golang.org/dl/) 1.17 or higher
-- SQLite3 (for this sample) You can use SQL, Firebase, Postgresql or whatever you choose.
+- **Database Options**:
+  - SQLite3 (default, no setup required)
+  - Supabase account and project (for cloud database)
+  - In-memory (for testing, no setup required)
 
 ### Installation
 
@@ -155,19 +160,68 @@ Clean Architecture promotes separation of concerns, making your codebase easier 
 
 ## API Endpoints
 
-- `POST /blogposts`: Create a new blog post
+### Authentication Endpoints (Public)
+
+- `POST /auth/register`: Register a new user account
+- `POST /auth/login`: Authenticate and receive a JWT token
+- `GET /auth/users/{username}`: Get public user profile by username
+
+### Authentication Endpoints (Protected - Requires JWT Token)
+
+- `GET /auth/profile`: Get authenticated user's profile
+- `PUT /auth/profile`: Update authenticated user's profile
+- `POST /auth/change-password`: Change user password
+
+### Blog Post Endpoints (Public - Read Only)
+
 - `GET /blogposts`: Retrieve all blog posts
 - `GET /blogposts/{id}`: Retrieve a specific blog post
+
+### Blog Post Endpoints (Protected - Requires JWT Token)
+
+- `POST /blogposts`: Create a new blog post
 - `PUT /blogposts/{id}`: Update a blog post
 - `DELETE /blogposts/{id}`: Delete a blog post
 
-### Create a Blog Post
+### Example: Register a User
 
 ```sh
-curl -X POST http://localhost:8080/blogposts -H "Content-Type: application/json" -d '{"ID":"1", "Title":"Test Title", "Content":"Test Content"}'
+curl -X POST http://localhost:8080/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john_doe","email":"john@example.com","password":"securepass123","full_name":"John Doe"}'
 ```
 
-### Get All Blog Posts
+### Example: Login
+
+```sh
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email_or_username":"john@example.com","password":"securepass123"}'
+```
+
+Response:
+```json
+{
+  "user": {
+    "id": "uuid-here",
+    "username": "john_doe",
+    "email": "john@example.com",
+    "full_name": "John Doe"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+### Example: Create a Blog Post (Protected)
+
+```sh
+curl -X POST http://localhost:8080/blogposts \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{"ID":"1", "Title":"Test Title", "Content":"Test Content"}'
+```
+
+### Example: Get All Blog Posts
 
 ```sh
 curl http://localhost:8080/blogposts
@@ -224,15 +278,34 @@ This project uses custom error types defined in the `errors` package. All errors
 
 - [Gorilla Mux](https://github.com/gorilla/mux) for HTTP routing
 - [Viper](https://github.com/spf13/viper) for configuration management
+- [JWT-Go](https://github.com/golang-jwt/jwt) for JWT token generation and validation
+- [bcrypt](https://golang.org/x/crypto/bcrypt) for secure password hashing
+- [godotenv](https://github.com/joho/godotenv) for loading environment variables
+- [Google UUID](https://github.com/google/uuid) for generating unique identifiers
+- [Supabase Go Client](https://github.com/supabase-community/supabase-go) for Supabase integration
   
 ## Configuration
 
-The application can be configured using environment variables:
+The application can be configured using environment variables. Copy `.env.example` to `.env` and configure:
 
+### General Settings
 - `SERVER_PORT`: The port on which the server will run (default: ":8080")
-- `DB_PATH`: The path to the SQLite database file (default: "./blog.db")
 - `LOG_LEVEL`: The logging level (default: "info")
 - `LOG_FILE`: The path to the log file (default: "server.log")
+
+### Database Configuration
+- `DB_TYPE`: Database type - "sqlite", "supabase", or "inmemory" (default: "sqlite")
+- `DB_PATH`: The path to the SQLite database file (default: "./blog.db")
+
+### Supabase Configuration (when DB_TYPE=supabase)
+- `SUPABASE_URL`: Your Supabase project URL
+- `SUPABASE_KEY`: Your Supabase anon/public API key
+- `SUPABASE_USER`: Database username (optional, for direct access)
+- `SUPABASE_PASS`: Database password (optional, for direct access)
+
+### JWT Authentication
+- `JWT_SECRET`: Secret key for JWT token signing (change in production!)
+- `JWT_TOKEN_DURATION_HOURS`: Token expiration time in hours (default: 24)
 
 ## Contributing
 
@@ -240,9 +313,14 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Future Improvements
 
-- Add authentication and authorization
-- Implement a persistent database
-- Add more CRUD operations for blog posts
+- Add role-based access control (RBAC) for admin/user permissions
+- Implement password reset via email
+- Add social login (OAuth2)
+- Implement blog post comments and likes
+- Add pagination for blog post listings
+- Implement full-text search for blog posts
+- Add user follow/unfollow functionality
+- Implement rate limiting for API endpoints
 
 ### Licensing
 

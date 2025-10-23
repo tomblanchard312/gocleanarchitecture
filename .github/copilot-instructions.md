@@ -72,8 +72,24 @@ logger.Error("message", logger.Field("key", value))
 
 ## Project-Specific Notes
 
-- Uses Gorilla Mux for routing, Viper for config, SQLite3 for persistence
+- Uses Gorilla Mux for routing, Viper for config, multiple database backends
+- **Database Support**: SQLite3 (default), Supabase (cloud), In-Memory (testing)
 - Tests use in-memory repository to avoid DB dependencies
 - Middleware for logging/recovery in `frameworks/web/middleware/`
 - Custom logger supports structured fields: `logger.Field("key", value)`
 - BlogPost entity has string ID, Title, Content + timestamps
+
+## Database Configuration
+
+**Environment Variables:**
+
+- `DB_TYPE`: "sqlite" (default), "supabase", or "inmemory"
+- `SUPABASE_URL`: Required when using Supabase
+- `SUPABASE_KEY`: Required when using Supabase (anon public key)
+- `DB_PATH`: SQLite database file path (default: "./blog.db")
+
+**Supabase Setup:**
+
+1. Create table using `supabase_schema.sql`
+2. Set environment variables in `.env` (see `.env.example`)
+3. Repository automatically handles REST API calls to Supabase

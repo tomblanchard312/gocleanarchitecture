@@ -16,9 +16,13 @@ type MockBlogPostUseCase struct {
 	blogPosts map[string]*entities.BlogPost
 }
 
-func (m *MockBlogPostUseCase) CreateBlogPost(blogPost *entities.BlogPost) error {
+func (m *MockBlogPostUseCase) CreateBlogPost(id, title, content string) (*entities.BlogPost, error) {
+	blogPost, err := entities.NewBlogPost(id, title, content)
+	if err != nil {
+		return nil, err
+	}
 	m.blogPosts[blogPost.ID] = blogPost
-	return nil
+	return blogPost, nil
 }
 
 func (m *MockBlogPostUseCase) GetAllBlogPosts() ([]*entities.BlogPost, error) {
@@ -33,9 +37,17 @@ func (m *MockBlogPostUseCase) GetBlogPost(id string) (*entities.BlogPost, error)
 	return m.blogPosts[id], nil
 }
 
-func (m *MockBlogPostUseCase) UpdateBlogPost(blogPost *entities.BlogPost) error {
-	m.blogPosts[blogPost.ID] = blogPost
-	return nil
+func (m *MockBlogPostUseCase) UpdateBlogPost(id, title, content string) (*entities.BlogPost, error) {
+	blogPost := m.blogPosts[id]
+	if blogPost == nil {
+		return nil, nil
+	}
+	err := blogPost.Update(title, content)
+	if err != nil {
+		return nil, err
+	}
+	m.blogPosts[id] = blogPost
+	return blogPost, nil
 }
 
 func (m *MockBlogPostUseCase) DeleteBlogPost(id string) error {
@@ -47,8 +59,12 @@ func TestCreateBlogPostHandler(t *testing.T) {
 	mockUseCase := &MockBlogPostUseCase{blogPosts: make(map[string]*entities.BlogPost)}
 	controller := interfaces.BlogPostController{BlogPostUseCase: mockUseCase}
 
-	blogPost := &entities.BlogPost{ID: "1", Title: "Test Title", Content: "Test Content"}
-	body, _ := json.Marshal(blogPost)
+	requestBody := map[string]string{
+		"id":      "1",
+		"title":   "Test Title",
+		"content": "Test Content",
+	}
+	body, _ := json.Marshal(requestBody)
 	req, err := http.NewRequest("POST", "/blogposts", bytes.NewBuffer(body))
 	if err != nil {
 		t.Fatal(err)
@@ -68,12 +84,14 @@ func TestCreateBlogPostHandler(t *testing.T) {
 }
 
 func TestGetAllBlogPostsHandler(t *testing.T) {
-	mockUseCase := &MockBlogPostUseCase{
-		blogPosts: map[string]*entities.BlogPost{
-			"1": {ID: "1", Title: "Title 1", Content: "Content 1"},
-			"2": {ID: "2", Title: "Title 2", Content: "Content 2"},
-		},
-	}
+	mockUseCase := &MockBlogPostUseCase{blogPosts: make(map[string]*entities.BlogPost)}
+
+	// Use domain factory to create test data
+	blogPost1, _ := entities.NewBlogPost("1", "Title 1", "Content 1")
+	blogPost2, _ := entities.NewBlogPost("2", "Title 2", "Content 2")
+	mockUseCase.blogPosts["1"] = blogPost1
+	mockUseCase.blogPosts["2"] = blogPost2
+
 	controller := interfaces.BlogPostController{BlogPostUseCase: mockUseCase}
 
 	req, err := http.NewRequest("GET", "/blogposts", nil)
@@ -101,11 +119,12 @@ func TestGetAllBlogPostsHandler(t *testing.T) {
 }
 
 func TestGetBlogPostHandler(t *testing.T) {
-	mockUseCase := &MockBlogPostUseCase{
-		blogPosts: map[string]*entities.BlogPost{
-			"1": {ID: "1", Title: "Test Title", Content: "Test Content"},
-		},
-	}
+	mockUseCase := &MockBlogPostUseCase{blogPosts: make(map[string]*entities.BlogPost)}
+
+	// Use domain factory to create test data
+	testBlogPost, _ := entities.NewBlogPost("1", "Test Title", "Test Content")
+	mockUseCase.blogPosts["1"] = testBlogPost
+
 	controller := interfaces.BlogPostController{BlogPostUseCase: mockUseCase}
 
 	req, err := http.NewRequest("GET", "/blogposts/1", nil)
@@ -136,15 +155,19 @@ func TestGetBlogPostHandler(t *testing.T) {
 }
 
 func TestUpdateBlogPostHandler(t *testing.T) {
-	mockUseCase := &MockBlogPostUseCase{
-		blogPosts: map[string]*entities.BlogPost{
-			"1": {ID: "1", Title: "Original Title", Content: "Original Content"},
-		},
-	}
+	mockUseCase := &MockBlogPostUseCase{blogPosts: make(map[string]*entities.BlogPost)}
+
+	// Create initial blog post using domain factory
+	initialBlogPost, _ := entities.NewBlogPost("1", "Original Title", "Original Content")
+	mockUseCase.blogPosts["1"] = initialBlogPost
+
 	controller := interfaces.BlogPostController{BlogPostUseCase: mockUseCase}
 
-	updatedBlogPost := &entities.BlogPost{ID: "1", Title: "Updated Title", Content: "Updated Content"}
-	body, _ := json.Marshal(updatedBlogPost)
+	requestBody := map[string]string{
+		"title":   "Updated Title",
+		"content": "Updated Content",
+	}
+	body, _ := json.Marshal(requestBody)
 	req, err := http.NewRequest("PUT", "/blogposts/1", bytes.NewBuffer(body))
 	if err != nil {
 		t.Fatal(err)
@@ -168,11 +191,12 @@ func TestUpdateBlogPostHandler(t *testing.T) {
 }
 
 func TestDeleteBlogPostHandler(t *testing.T) {
-	mockUseCase := &MockBlogPostUseCase{
-		blogPosts: map[string]*entities.BlogPost{
-			"1": {ID: "1", Title: "Test Title", Content: "Test Content"},
-		},
-	}
+	mockUseCase := &MockBlogPostUseCase{blogPosts: make(map[string]*entities.BlogPost)}
+
+	// Create initial blog post using domain factory
+	initialBlogPost, _ := entities.NewBlogPost("1", "Test Title", "Test Content")
+	mockUseCase.blogPosts["1"] = initialBlogPost
+
 	controller := interfaces.BlogPostController{BlogPostUseCase: mockUseCase}
 
 	req, err := http.NewRequest("DELETE", "/blogposts/1", nil)
