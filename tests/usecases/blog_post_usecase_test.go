@@ -41,7 +41,8 @@ func TestCreateBlogPost(t *testing.T) {
 	mockLogger := &MockLogger{}
 	usecase := usecases.BlogPostUseCase{Repo: repo, Logger: mockLogger}
 
-	blogPost, err := usecase.CreateBlogPost("1", "Test Title", "Test Content")
+	authorID := "user-123"
+	blogPost, err := usecase.CreateBlogPost("1", "Test Title", "Test Content", authorID)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -53,6 +54,10 @@ func TestCreateBlogPost(t *testing.T) {
 	if blogPost.ID != "1" || blogPost.Title != "Test Title" || blogPost.Content != "Test Content" {
 		t.Fatalf("blog post not created correctly: %v", blogPost)
 	}
+
+	if blogPost.AuthorID != authorID {
+		t.Errorf("expected author ID to be %s, got %s", authorID, blogPost.AuthorID)
+	}
 }
 
 func TestGetAllBlogPosts(t *testing.T) {
@@ -60,8 +65,8 @@ func TestGetAllBlogPosts(t *testing.T) {
 	mockLogger := &MockLogger{}
 	usecase := usecases.BlogPostUseCase{Repo: repo, Logger: mockLogger}
 
-	blogPost1 := &entities.BlogPost{ID: "1", Title: "Title 1", Content: "Content 1"}
-	blogPost2 := &entities.BlogPost{ID: "2", Title: "Title 2", Content: "Content 2"}
+	blogPost1 := &entities.BlogPost{ID: "1", Title: "Title 1", Content: "Content 1", AuthorID: "user-123"}
+	blogPost2 := &entities.BlogPost{ID: "2", Title: "Title 2", Content: "Content 2", AuthorID: "user-456"}
 
 	repo.Save(blogPost1)
 	repo.Save(blogPost2)
@@ -81,7 +86,7 @@ func TestGetBlogPost(t *testing.T) {
 	mockLogger := &MockLogger{}
 	usecase := usecases.BlogPostUseCase{Repo: repo, Logger: mockLogger}
 
-	blogPost := &entities.BlogPost{ID: "1", Title: "Test Title", Content: "Test Content"}
+	blogPost := &entities.BlogPost{ID: "1", Title: "Test Title", Content: "Test Content", AuthorID: "user-123"}
 	repo.Save(blogPost)
 
 	result, err := usecase.GetBlogPost("1")
@@ -99,14 +104,15 @@ func TestUpdateBlogPost(t *testing.T) {
 	mockLogger := &MockLogger{}
 	usecase := usecases.BlogPostUseCase{Repo: repo, Logger: mockLogger}
 
+	authorID := "user-123"
 	// Create initial blog post
-	_, err := usecase.CreateBlogPost("1", "Original Title", "Original Content")
+	_, err := usecase.CreateBlogPost("1", "Original Title", "Original Content", authorID)
 	if err != nil {
 		t.Fatalf("expected no error creating blog post, got %v", err)
 	}
 
-	// Update the blog post
-	updatedBlogPost, err := usecase.UpdateBlogPost("1", "Updated Title", "Updated Content")
+	// Update the blog post as the author
+	updatedBlogPost, err := usecase.UpdateBlogPost("1", "Updated Title", "Updated Content", authorID)
 	if err != nil {
 		t.Fatalf("expected no error updating, got %v", err)
 	}
@@ -116,15 +122,41 @@ func TestUpdateBlogPost(t *testing.T) {
 	}
 }
 
+func TestUpdateBlogPostUnauthorized(t *testing.T) {
+	repo := &MockBlogPostRepository{blogPosts: make(map[string]*entities.BlogPost)}
+	mockLogger := &MockLogger{}
+	usecase := usecases.BlogPostUseCase{Repo: repo, Logger: mockLogger}
+
+	authorID := "user-123"
+	differentUserID := "user-456"
+
+	// Create blog post as user-123
+	_, err := usecase.CreateBlogPost("1", "Original Title", "Original Content", authorID)
+	if err != nil {
+		t.Fatalf("expected no error creating blog post, got %v", err)
+	}
+
+	// Try to update as different user (should fail)
+	_, err = usecase.UpdateBlogPost("1", "Updated Title", "Updated Content", differentUserID)
+	if err == nil {
+		t.Fatal("expected error when non-author tries to update, got nil")
+	}
+
+	if err.Error() != "unauthorized: you can only update your own blog posts" {
+		t.Errorf("expected authorization error, got: %v", err)
+	}
+}
+
 func TestDeleteBlogPost(t *testing.T) {
 	repo := &MockBlogPostRepository{blogPosts: make(map[string]*entities.BlogPost)}
 	mockLogger := &MockLogger{}
 	usecase := usecases.BlogPostUseCase{Repo: repo, Logger: mockLogger}
 
-	blogPost := &entities.BlogPost{ID: "1", Title: "Test Title", Content: "Test Content"}
+	authorID := "user-123"
+	blogPost := &entities.BlogPost{ID: "1", Title: "Test Title", Content: "Test Content", AuthorID: authorID}
 	repo.Save(blogPost)
 
-	err := usecase.DeleteBlogPost("1")
+	err := usecase.DeleteBlogPost("1", authorID)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -132,5 +164,32 @@ func TestDeleteBlogPost(t *testing.T) {
 	result, _ := repo.FindByID("1")
 	if result != nil {
 		t.Fatalf("expected blog post to be deleted, but it still exists")
+	}
+}
+
+func TestDeleteBlogPostUnauthorized(t *testing.T) {
+	repo := &MockBlogPostRepository{blogPosts: make(map[string]*entities.BlogPost)}
+	mockLogger := &MockLogger{}
+	usecase := usecases.BlogPostUseCase{Repo: repo, Logger: mockLogger}
+
+	authorID := "user-123"
+	differentUserID := "user-456"
+	blogPost := &entities.BlogPost{ID: "1", Title: "Test Title", Content: "Test Content", AuthorID: authorID}
+	repo.Save(blogPost)
+
+	// Try to delete as different user (should fail)
+	err := usecase.DeleteBlogPost("1", differentUserID)
+	if err == nil {
+		t.Fatal("expected error when non-author tries to delete, got nil")
+	}
+
+	if err.Error() != "unauthorized: you can only delete your own blog posts" {
+		t.Errorf("expected authorization error, got: %v", err)
+	}
+
+	// Verify post still exists
+	result, _ := repo.FindByID("1")
+	if result == nil {
+		t.Fatal("expected blog post to still exist after unauthorized delete attempt")
 	}
 }

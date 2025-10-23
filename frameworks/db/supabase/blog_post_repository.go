@@ -21,6 +21,7 @@ type supabaseBlogPost struct {
 	ID        string    `json:"id"`
 	Title     string    `json:"title"`
 	Content   string    `json:"content"`
+	AuthorID  string    `json:"author_id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -38,6 +39,7 @@ func (r *SupabaseBlogPostRepository) Save(blogPost *entities.BlogPost) error {
 		ID:        blogPost.ID,
 		Title:     blogPost.Title,
 		Content:   blogPost.Content,
+		AuthorID:  blogPost.AuthorID,
 		CreatedAt: blogPost.CreatedAt,
 		UpdatedAt: blogPost.UpdatedAt,
 	}
@@ -99,6 +101,7 @@ func (r *SupabaseBlogPostRepository) FindAll() ([]*entities.BlogPost, error) {
 			ID:        sp.ID,
 			Title:     sp.Title,
 			Content:   sp.Content,
+			AuthorID:  sp.AuthorID,
 			CreatedAt: sp.CreatedAt,
 			UpdatedAt: sp.UpdatedAt,
 		}
@@ -140,6 +143,7 @@ func (r *SupabaseBlogPostRepository) FindByID(id string) (*entities.BlogPost, er
 		ID:        sp.ID,
 		Title:     sp.Title,
 		Content:   sp.Content,
+		AuthorID:  sp.AuthorID,
 		CreatedAt: sp.CreatedAt,
 		UpdatedAt: sp.UpdatedAt,
 	}, nil

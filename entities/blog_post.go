@@ -10,14 +10,19 @@ type BlogPost struct {
 	ID        string
 	Title     string
 	Content   string
+	AuthorID  string // User ID of the author
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 // Domain methods and business rules
-func NewBlogPost(id, title, content string) (*BlogPost, error) {
+func NewBlogPost(id, title, content, authorID string) (*BlogPost, error) {
 	if err := validateBlogPost(id, title, content); err != nil {
 		return nil, err
+	}
+
+	if strings.TrimSpace(authorID) == "" {
+		return nil, errors.New("author ID cannot be empty")
 	}
 
 	now := time.Now()
@@ -25,9 +30,15 @@ func NewBlogPost(id, title, content string) (*BlogPost, error) {
 		ID:        id,
 		Title:     strings.TrimSpace(title),
 		Content:   strings.TrimSpace(content),
+		AuthorID:  authorID,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}, nil
+}
+
+// IsAuthor checks if the given user ID is the author of this blog post
+func (bp *BlogPost) IsAuthor(userID string) bool {
+	return bp.AuthorID == userID
 }
 
 func (bp *BlogPost) Update(title, content string) error {

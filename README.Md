@@ -307,6 +307,260 @@ The application can be configured using environment variables. Copy `.env.exampl
 - `JWT_SECRET`: Secret key for JWT token signing (change in production!)
 - `JWT_TOKEN_DURATION_HOURS`: Token expiration time in hours (default: 24)
 
+## API Documentation
+
+### Swagger/OpenAPI
+The API is documented using OpenAPI 3.0 specification. You can find the complete API documentation in `api-documentation.yaml`.
+
+To view the documentation:
+1. **Using Swagger UI**: Upload the `api-documentation.yaml` file to [Swagger Editor](https://editor.swagger.io/)
+2. **Using Swagger UI locally**:
+   ```bash
+   docker run -p 80:8080 -e SWAGGER_JSON=/api-documentation.yaml -v $(pwd):/usr/share/nginx/html swaggerapi/swagger-ui
+   ```
+
+### Postman Collection
+Import the `Go-Clean-Architecture-Blog.postman_collection.json` file into Postman for easy API testing.
+
+**Setup**:
+1. Import the collection into Postman
+2. The collection includes environment variables:
+   - `base_url`: API server URL (default: http://localhost:8080)
+   - `jwt_token`: Auto-saved after login/register
+   - `user_id`: Auto-saved after authentication
+   - `post_id`: Auto-saved after creating a post
+
+## Deployment
+
+### Prerequisites for Production
+
+- Go 1.17 or higher
+- Database (SQLite, Supabase, or other PostgreSQL-compatible)
+- SSL/TLS certificates (recommended)
+- Reverse proxy (nginx or similar)
+
+### Deployment Options
+
+#### Option 1: Deploy with SQLite (Simple)
+
+1. **Build the application**:
+   ```bash
+   CGO_ENABLED=1 go build -o blog-api ./cmd/main.go
+   ```
+
+2. **Create a production `.env` file**:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Configure production settings**:
+   ```env
+   DB_TYPE=sqlite
+   DB_PATH=/var/lib/blog-api/blog.db
+   SERVER_PORT=:8080
+   LOG_LEVEL=info
+   LOG_FILE=/var/log/blog-api/server.log
+   JWT_SECRET=your-super-secret-key-minimum-32-characters-long
+   JWT_TOKEN_DURATION_HOURS=24
+   ```
+
+4. **Run the application**:
+   ```bash
+   ./blog-api
+   ```
+
+5. **Set up as a systemd service** (Linux):
+   
+   Create `/etc/systemd/system/blog-api.service`:
+   ```ini
+   [Unit]
+   Description=Go Clean Architecture Blog API
+   After=network.target
+
+   [Service]
+   Type=simple
+   User=blog-api
+   WorkingDirectory=/opt/blog-api
+   ExecStart=/opt/blog-api/blog-api
+   Restart=on-failure
+   RestartSec=10
+
+   Environment="PATH=/usr/bin:/usr/local/bin"
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+   Enable and start the service:
+   ```bash
+   sudo systemctl enable blog-api
+   sudo systemctl start blog-api
+   sudo systemctl status blog-api
+   ```
+
+#### Option 2: Deploy with Supabase (Recommended for Production)
+
+1. **Set up Supabase project**:
+   - Create a project at [supabase.com](https://supabase.com)
+   - Note your project URL and anon key
+   - Run the SQL scripts in Supabase SQL Editor:
+     - `supabase_users_schema.sql`
+     - `supabase_schema.sql`
+
+2. **Build the application**:
+   ```bash
+   go build -o blog-api ./cmd/main.go
+   ```
+
+3. **Configure for Supabase**:
+   ```env
+   DB_TYPE=supabase
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_KEY=your-anon-public-key
+   SERVER_PORT=:8080
+   LOG_LEVEL=info
+   LOG_FILE=/var/log/blog-api/server.log
+   JWT_SECRET=your-super-secret-key-minimum-32-characters-long
+   JWT_TOKEN_DURATION_HOURS=24
+   ```
+
+4. **Deploy to a VPS or cloud platform**
+
+#### Option 3: Docker Deployment
+
+1. **Create a `Dockerfile`**:
+   ```dockerfile
+   FROM golang:1.21-alpine AS builder
+   
+   WORKDIR /app
+   COPY go.mod go.sum ./
+   RUN go mod download
+   
+   COPY . .
+   RUN go build -o blog-api ./cmd/main.go
+   
+   FROM alpine:latest
+   RUN apk --no-cache add ca-certificates
+   
+   WORKDIR /root/
+   COPY --from=builder /app/blog-api .
+   COPY --from=builder /app/.env.example .env
+   
+   EXPOSE 8080
+   CMD ["./blog-api"]
+   ```
+
+2. **Create `docker-compose.yml`** (with SQLite):
+   ```yaml
+   version: '3.8'
+   
+   services:
+     api:
+       build: .
+       ports:
+         - "8080:8080"
+       environment:
+         - DB_TYPE=sqlite
+         - DB_PATH=/data/blog.db
+         - JWT_SECRET=your-secret-key
+       volumes:
+         - ./data:/data
+         - ./logs:/var/log/blog-api
+       restart: unless-stopped
+   ```
+
+3. **Build and run**:
+   ```bash
+   docker-compose up -d
+   ```
+
+### Nginx Reverse Proxy Configuration
+
+Create `/etc/nginx/sites-available/blog-api`:
+
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+    
+    # Redirect to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name yourdomain.com;
+    
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+    
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+Enable the site:
+```bash
+sudo ln -s /etc/nginx/sites-available/blog-api /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### Security Checklist for Production
+
+- [ ] Change `JWT_SECRET` to a strong, randomly generated secret
+- [ ] Use HTTPS/TLS encryption
+- [ ] Set appropriate CORS policies
+- [ ] Enable rate limiting
+- [ ] Use environment variables for all secrets
+- [ ] Keep the `.env` file secure (never commit it)
+- [ ] Regularly update dependencies
+- [ ] Set up monitoring and logging
+- [ ] Configure firewall rules
+- [ ] Use a strong database password (if applicable)
+- [ ] Enable Supabase Row Level Security (RLS)
+- [ ] Implement backup strategy
+- [ ] Set up health check endpoints
+
+### Environment-Specific Configuration
+
+**Development**:
+```env
+DB_TYPE=inmemory
+LOG_LEVEL=debug
+```
+
+**Staging**:
+```env
+DB_TYPE=sqlite
+DB_PATH=./staging.db
+LOG_LEVEL=info
+```
+
+**Production**:
+```env
+DB_TYPE=supabase
+LOG_LEVEL=warn
+JWT_TOKEN_DURATION_HOURS=24
+```
+
+### Monitoring and Health Checks
+
+Consider adding health check endpoints and integrating with:
+- **Prometheus** for metrics
+- **Grafana** for dashboards
+- **ELK Stack** for log aggregation
+- **Sentry** for error tracking
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

@@ -12,11 +12,11 @@ type Logger interface {
 }
 
 type BlogPostUseCaseInterface interface {
-	CreateBlogPost(id, title, content string) (*entities.BlogPost, error)
+	CreateBlogPost(id, title, content, authorID string) (*entities.BlogPost, error)
 	GetAllBlogPosts() ([]*entities.BlogPost, error)
 	GetBlogPost(id string) (*entities.BlogPost, error)
-	UpdateBlogPost(id, title, content string) (*entities.BlogPost, error)
-	DeleteBlogPost(id string) error
+	UpdateBlogPost(id, title, content, userID string) (*entities.BlogPost, error)
+	DeleteBlogPost(id, userID string) error
 }
 
 type BlogPostUseCase struct {
@@ -31,9 +31,9 @@ func NewBlogPostUseCase(repo interfaces.BlogPostRepository, logger Logger) BlogP
 	}
 }
 
-func (u *BlogPostUseCase) CreateBlogPost(id, title, content string) (*entities.BlogPost, error) {
+func (u *BlogPostUseCase) CreateBlogPost(id, title, content, authorID string) (*entities.BlogPost, error) {
 	// Use domain factory method
-	blogPost, err := entities.NewBlogPost(id, title, content)
+	blogPost, err := entities.NewBlogPost(id, title, content, authorID)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (u *BlogPostUseCase) GetBlogPost(id string) (*entities.BlogPost, error) {
 	return blogPost, nil
 }
 
-func (u *BlogPostUseCase) UpdateBlogPost(id, title, content string) (*entities.BlogPost, error) {
+func (u *BlogPostUseCase) UpdateBlogPost(id, title, content, userID string) (*entities.BlogPost, error) {
 	// Get existing blog post
 	blogPost, err := u.Repo.FindByID(id)
 	if err != nil {
@@ -73,6 +73,11 @@ func (u *BlogPostUseCase) UpdateBlogPost(id, title, content string) (*entities.B
 	}
 	if blogPost == nil {
 		return nil, errors.New("blog post not found")
+	}
+
+	// Validate ownership
+	if !blogPost.IsAuthor(userID) {
+		return nil, errors.New("unauthorized: you can only update your own blog posts")
 	}
 
 	// Use domain method to update
@@ -89,8 +94,23 @@ func (u *BlogPostUseCase) UpdateBlogPost(id, title, content string) (*entities.B
 	return blogPost, nil
 }
 
-func (u *BlogPostUseCase) DeleteBlogPost(id string) error {
-	err := u.Repo.Delete(id)
+func (u *BlogPostUseCase) DeleteBlogPost(id, userID string) error {
+	// Get existing blog post to validate ownership
+	blogPost, err := u.Repo.FindByID(id)
+	if err != nil {
+		u.Logger.Error("Failed to find blog post for deletion", "error", err, "id", id)
+		return err
+	}
+	if blogPost == nil {
+		return errors.New("blog post not found")
+	}
+
+	// Validate ownership
+	if !blogPost.IsAuthor(userID) {
+		return errors.New("unauthorized: you can only delete your own blog posts")
+	}
+
+	err = u.Repo.Delete(id)
 	if err != nil {
 		u.Logger.Error("Failed to delete blog post", "error", err, "id", id)
 		return err

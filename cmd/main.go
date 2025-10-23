@@ -47,8 +47,9 @@ func main() {
 		customLogger.Info("Using Supabase repository", logger.Field("url", cfg.SupabaseURL))
 	case "inmemory":
 		blogPostRepo = db.NewInMemoryBlogPostRepository()
+		userRepo = db.NewInMemoryUserRepository()
 		customLogger.Info("Using in-memory repository")
-		log.Println("Warning: User authentication not supported with in-memory database")
+		customLogger.Warn("In-memory database: data will be lost on restart")
 	case "sqlite":
 		fallthrough
 	default:
@@ -58,8 +59,8 @@ func main() {
 		}
 		defer sqliteDB.Close()
 		blogPostRepo = sqlite.NewSQLiteBlogPostRepository(sqliteDB)
+		userRepo = sqlite.NewSQLiteUserRepository(sqliteDB)
 		customLogger.Info("Using SQLite repository", logger.Field("path", cfg.DBPath))
-		log.Println("Warning: User authentication not fully supported with SQLite (requires schema migration)")
 	}
 
 	// Initialize JWT Manager

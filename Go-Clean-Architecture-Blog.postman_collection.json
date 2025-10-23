@@ -1,0 +1,406 @@
+{
+	"info": {
+		"_postman_id": "goclean-blog-api",
+		"name": "Go Clean Architecture - Blog API",
+		"description": "Complete API collection for testing the Go Clean Architecture Blog application.\n\n## Setup\n1. Set the `base_url` variable to your server URL (default: http://localhost:8080)\n2. Register a user or login to get a JWT token\n3. The token will be automatically saved to the `jwt_token` variable\n4. Protected endpoints will automatically use this token\n\n## Variables\n- `base_url`: API base URL\n- `jwt_token`: JWT authentication token (auto-saved after login/register)\n- `user_id`: Current user ID (auto-saved)\n- `post_id`: Test blog post ID",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.environment.set('jwt_token', jsonData.token);",
+									"    pm.environment.set('user_id', jsonData.user.id);",
+									"    console.log('JWT Token saved:', jsonData.token);",
+									"    console.log('User ID saved:', jsonData.user.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"email\": \"testuser@example.com\",\n    \"password\": \"password123\",\n    \"full_name\": \"Test User\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "register"]
+						},
+						"description": "Register a new user account. Returns user info and JWT token."
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.environment.set('jwt_token', jsonData.token);",
+									"    pm.environment.set('user_id', jsonData.user.id);",
+									"    console.log('JWT Token saved:', jsonData.token);",
+									"    console.log('User ID saved:', jsonData.user.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email_or_username\": \"testuser@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login with email/username and password. Returns JWT token."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/profile",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "profile"]
+						},
+						"description": "Get the authenticated user's profile (requires JWT token)."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"full_name\": \"Updated Test User\",\n    \"bio\": \"I'm a software developer testing this API\",\n    \"avatar_url\": \"https://example.com/avatar.jpg\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/profile",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "profile"]
+						},
+						"description": "Update the authenticated user's profile information."
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"old_password\": \"password123\",\n    \"new_password\": \"newpassword456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/change-password",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "change-password"]
+						},
+						"description": "Change the authenticated user's password."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by Username",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/users/:username",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "users", ":username"],
+							"variable": [
+								{
+									"key": "username",
+									"value": "testuser",
+									"description": "Username to lookup"
+								}
+							]
+						},
+						"description": "Get a user's public profile by username (no authentication required)."
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication and user management endpoints"
+		},
+		{
+			"name": "Blog Posts",
+			"item": [
+				{
+					"name": "Get All Blog Posts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/blogposts",
+							"host": ["{{base_url}}"],
+							"path": ["blogposts"]
+						},
+						"description": "Get all blog posts (public access, no authentication required)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Blog Post by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/blogposts/:id",
+							"host": ["{{base_url}}"],
+							"path": ["blogposts", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{post_id}}",
+									"description": "Blog post ID"
+								}
+							]
+						},
+						"description": "Get a specific blog post by ID (public access)."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Blog Post",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.environment.set('post_id', jsonData.id);",
+									"    console.log('Post ID saved:', jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"{{$randomUUID}}\",\n    \"title\": \"My Test Blog Post\",\n    \"content\": \"This is the content of my test blog post. It contains interesting information about clean architecture in Go.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/blogposts",
+							"host": ["{{base_url}}"],
+							"path": ["blogposts"]
+						},
+						"description": "Create a new blog post (requires authentication). Post ID is auto-saved to post_id variable."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Blog Post",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Updated Blog Post Title\",\n    \"content\": \"This is the updated content of my blog post with more details.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/blogposts/:id",
+							"host": ["{{base_url}}"],
+							"path": ["blogposts", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{post_id}}",
+									"description": "Blog post ID to update"
+								}
+							]
+						},
+						"description": "Update an existing blog post (requires authentication and ownership)."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Blog Post",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/blogposts/:id",
+							"host": ["{{base_url}}"],
+							"path": ["blogposts", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{post_id}}",
+									"description": "Blog post ID to delete"
+								}
+							]
+						},
+						"description": "Delete a blog post (requires authentication and ownership)."
+					},
+					"response": []
+				}
+			],
+			"description": "Blog post CRUD operations"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [""]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [""]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "post_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+

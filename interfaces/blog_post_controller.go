@@ -9,11 +9,11 @@ import (
 )
 
 type BlogPostUseCase interface {
-	CreateBlogPost(id, title, content string) (*entities.BlogPost, error)
+	CreateBlogPost(id, title, content, authorID string) (*entities.BlogPost, error)
 	GetAllBlogPosts() ([]*entities.BlogPost, error)
 	GetBlogPost(id string) (*entities.BlogPost, error)
-	UpdateBlogPost(id, title, content string) (*entities.BlogPost, error)
-	DeleteBlogPost(id string) error
+	UpdateBlogPost(id, title, content, userID string) (*entities.BlogPost, error)
+	DeleteBlogPost(id, userID string) error
 }
 
 type BlogPostController struct {
@@ -21,6 +21,13 @@ type BlogPostController struct {
 }
 
 func (c *BlogPostController) CreateBlogPost(w http.ResponseWriter, r *http.Request) {
+	// Get user ID from context (set by auth middleware)
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	var request struct {
 		ID      string `json:"id"`
 		Title   string `json:"title"`
@@ -33,7 +40,7 @@ func (c *BlogPostController) CreateBlogPost(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	blogPost, err := c.BlogPostUseCase.CreateBlogPost(request.ID, request.Title, request.Content)
+	blogPost, err := c.BlogPostUseCase.CreateBlogPost(request.ID, request.Title, request.Content, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -75,6 +82,13 @@ func (c *BlogPostController) GetBlogPost(w http.ResponseWriter, r *http.Request)
 }
 
 func (c *BlogPostController) UpdateBlogPost(w http.ResponseWriter, r *http.Request) {
+	// Get user ID from context (set by auth middleware)
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 
@@ -89,8 +103,13 @@ func (c *BlogPostController) UpdateBlogPost(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	blogPost, err := c.BlogPostUseCase.UpdateBlogPost(id, request.Title, request.Content)
+	blogPost, err := c.BlogPostUseCase.UpdateBlogPost(id, request.Title, request.Content, userID)
 	if err != nil {
+		// Check for authorization error
+		if err.Error() == "unauthorized: you can only update your own blog posts" {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -101,11 +120,23 @@ func (c *BlogPostController) UpdateBlogPost(w http.ResponseWriter, r *http.Reque
 }
 
 func (c *BlogPostController) DeleteBlogPost(w http.ResponseWriter, r *http.Request) {
+	// Get user ID from context (set by auth middleware)
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	err := c.BlogPostUseCase.DeleteBlogPost(id)
+	err := c.BlogPostUseCase.DeleteBlogPost(id, userID)
 	if err != nil {
+		// Check for authorization error
+		if err.Error() == "unauthorized: you can only delete your own blog posts" {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
