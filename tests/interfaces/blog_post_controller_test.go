@@ -2,6 +2,7 @@ package interfaces_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"gocleanarchitecture/entities"
 	"gocleanarchitecture/interfaces"
@@ -16,8 +17,8 @@ type MockBlogPostUseCase struct {
 	blogPosts map[string]*entities.BlogPost
 }
 
-func (m *MockBlogPostUseCase) CreateBlogPost(id, title, content string) (*entities.BlogPost, error) {
-	blogPost, err := entities.NewBlogPost(id, title, content)
+func (m *MockBlogPostUseCase) CreateBlogPost(id, title, content, authorID string) (*entities.BlogPost, error) {
+	blogPost, err := entities.NewBlogPost(id, title, content, authorID)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func (m *MockBlogPostUseCase) GetBlogPost(id string) (*entities.BlogPost, error)
 	return m.blogPosts[id], nil
 }
 
-func (m *MockBlogPostUseCase) UpdateBlogPost(id, title, content string) (*entities.BlogPost, error) {
+func (m *MockBlogPostUseCase) UpdateBlogPost(id, title, content, userID string) (*entities.BlogPost, error) {
 	blogPost := m.blogPosts[id]
 	if blogPost == nil {
 		return nil, nil
@@ -50,7 +51,7 @@ func (m *MockBlogPostUseCase) UpdateBlogPost(id, title, content string) (*entiti
 	return blogPost, nil
 }
 
-func (m *MockBlogPostUseCase) DeleteBlogPost(id string) error {
+func (m *MockBlogPostUseCase) DeleteBlogPost(id, userID string) error {
 	delete(m.blogPosts, id)
 	return nil
 }
@@ -70,6 +71,11 @@ func TestCreateBlogPostHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Set userID in context (simulating auth middleware)
+	//nolint:staticcheck // Using string key to match what the actual auth middleware uses
+	ctx := context.WithValue(req.Context(), "userID", "test-user-123")
+	req = req.WithContext(ctx)
+
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(controller.CreateBlogPost)
 	handler.ServeHTTP(rr, req)
@@ -87,8 +93,8 @@ func TestGetAllBlogPostsHandler(t *testing.T) {
 	mockUseCase := &MockBlogPostUseCase{blogPosts: make(map[string]*entities.BlogPost)}
 
 	// Use domain factory to create test data
-	blogPost1, _ := entities.NewBlogPost("1", "Title 1", "Content 1")
-	blogPost2, _ := entities.NewBlogPost("2", "Title 2", "Content 2")
+	blogPost1, _ := entities.NewBlogPost("1", "Title 1", "Content 1", "author-1")
+	blogPost2, _ := entities.NewBlogPost("2", "Title 2", "Content 2", "author-2")
 	mockUseCase.blogPosts["1"] = blogPost1
 	mockUseCase.blogPosts["2"] = blogPost2
 
@@ -122,7 +128,7 @@ func TestGetBlogPostHandler(t *testing.T) {
 	mockUseCase := &MockBlogPostUseCase{blogPosts: make(map[string]*entities.BlogPost)}
 
 	// Use domain factory to create test data
-	testBlogPost, _ := entities.NewBlogPost("1", "Test Title", "Test Content")
+	testBlogPost, _ := entities.NewBlogPost("1", "Test Title", "Test Content", "author-1")
 	mockUseCase.blogPosts["1"] = testBlogPost
 
 	controller := interfaces.BlogPostController{BlogPostUseCase: mockUseCase}
@@ -158,7 +164,7 @@ func TestUpdateBlogPostHandler(t *testing.T) {
 	mockUseCase := &MockBlogPostUseCase{blogPosts: make(map[string]*entities.BlogPost)}
 
 	// Create initial blog post using domain factory
-	initialBlogPost, _ := entities.NewBlogPost("1", "Original Title", "Original Content")
+	initialBlogPost, _ := entities.NewBlogPost("1", "Original Title", "Original Content", "author-1")
 	mockUseCase.blogPosts["1"] = initialBlogPost
 
 	controller := interfaces.BlogPostController{BlogPostUseCase: mockUseCase}
@@ -175,6 +181,11 @@ func TestUpdateBlogPostHandler(t *testing.T) {
 
 	vars := map[string]string{"id": "1"}
 	req = mux.SetURLVars(req, vars)
+
+	// Set userID in context (simulating auth middleware)
+	//nolint:staticcheck // Using string key to match what the actual auth middleware uses
+	ctx := context.WithValue(req.Context(), "userID", "test-user-123")
+	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(controller.UpdateBlogPost)
@@ -194,7 +205,7 @@ func TestDeleteBlogPostHandler(t *testing.T) {
 	mockUseCase := &MockBlogPostUseCase{blogPosts: make(map[string]*entities.BlogPost)}
 
 	// Create initial blog post using domain factory
-	initialBlogPost, _ := entities.NewBlogPost("1", "Test Title", "Test Content")
+	initialBlogPost, _ := entities.NewBlogPost("1", "Test Title", "Test Content", "author-1")
 	mockUseCase.blogPosts["1"] = initialBlogPost
 
 	controller := interfaces.BlogPostController{BlogPostUseCase: mockUseCase}
@@ -206,6 +217,11 @@ func TestDeleteBlogPostHandler(t *testing.T) {
 
 	vars := map[string]string{"id": "1"}
 	req = mux.SetURLVars(req, vars)
+
+	// Set userID in context (simulating auth middleware)
+	//nolint:staticcheck // Using string key to match what the actual auth middleware uses
+	ctx := context.WithValue(req.Context(), "userID", "test-user-123")
+	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(controller.DeleteBlogPost)

@@ -94,6 +94,17 @@ func (m *mockUserRepository) Delete(id string) error {
 	return nil
 }
 
+func (m *mockUserRepository) GetAll() ([]*entities.User, error) {
+	if m.findError != nil {
+		return nil, m.findError
+	}
+	users := make([]*entities.User, 0, len(m.users))
+	for _, user := range m.users {
+		users = append(users, user)
+	}
+	return users, nil
+}
+
 // Mock TokenGenerator
 type mockTokenGenerator struct {
 	token         string

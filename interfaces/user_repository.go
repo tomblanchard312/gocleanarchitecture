@@ -8,7 +8,7 @@ type UserRepository interface {
 	FindByEmail(email string) (*entities.User, error)
 	FindByUsername(username string) (*entities.User, error)
 	Delete(id string) error
+	GetAll() ([]*entities.User, error)
 	ExistsByEmail(email string) (bool, error)
 	ExistsByUsername(username string) (bool, error)
 }
-

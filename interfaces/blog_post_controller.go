@@ -3,6 +3,7 @@ package interfaces
 import (
 	"encoding/json"
 	"gocleanarchitecture/entities"
+	"gocleanarchitecture/frameworks/websocket"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -18,6 +19,7 @@ type BlogPostUseCase interface {
 
 type BlogPostController struct {
 	BlogPostUseCase BlogPostUseCase
+	WebSocketHub    *websocket.Hub
 }
 
 func (c *BlogPostController) CreateBlogPost(w http.ResponseWriter, r *http.Request) {
@@ -44,6 +46,11 @@ func (c *BlogPostController) CreateBlogPost(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+	}
+
+	// Broadcast new blog post via WebSocket
+	if c.WebSocketHub != nil {
+		c.WebSocketHub.BroadcastJSON(websocket.MessageTypeNewBlogPost, blogPost)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

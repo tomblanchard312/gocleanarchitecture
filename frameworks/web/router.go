@@ -12,6 +12,10 @@ import (
 type RouterConfig struct {
 	BlogPostController *interfaces.BlogPostController
 	AuthController     *interfaces.AuthController
+	AdminController    *interfaces.AdminController
+	CommentController  *interfaces.CommentController
+	WebSocketHandler   *interfaces.WebSocketHandler
+	UserRepo           interfaces.UserRepository
 	JWTManager         *auth.JWTManager
 	Logger             logger.Logger
 }
@@ -46,6 +50,29 @@ func NewRouter(config *RouterConfig) *mux.Router {
 	protectedBlogRouter.HandleFunc("", config.BlogPostController.CreateBlogPost).Methods("POST")
 	protectedBlogRouter.HandleFunc("/{id}", config.BlogPostController.UpdateBlogPost).Methods("PUT")
 	protectedBlogRouter.HandleFunc("/{id}", config.BlogPostController.DeleteBlogPost).Methods("DELETE")
+
+	// Admin routes (requires authentication + admin role)
+	adminRouter := router.PathPrefix("/admin").Subrouter()
+	adminRouter.Use(middleware.AuthMiddlewareFunc(config.JWTManager))
+	adminRouter.Use(middleware.AdminMiddlewareFunc(config.UserRepo))
+	adminRouter.HandleFunc("/users", config.AdminController.GetAllUsers).Methods("GET")
+	adminRouter.HandleFunc("/users/{id}", config.AdminController.GetUserDetails).Methods("GET")
+	adminRouter.HandleFunc("/users/{id}/role", config.AdminController.UpdateUserRole).Methods("PUT")
+	adminRouter.HandleFunc("/users/{id}", config.AdminController.DeleteUser).Methods("DELETE")
+
+	// Comment routes (public for reading, protected for writing)
+	router.HandleFunc("/blogposts/{blogPostId}/comments", config.CommentController.GetCommentsByBlogPost).Methods("GET")
+	router.HandleFunc("/comments/{commentId}/replies", config.CommentController.GetRepliesByComment).Methods("GET")
+
+	// Protected comment routes
+	protectedCommentRouter := router.PathPrefix("").Subrouter()
+	protectedCommentRouter.Use(middleware.AuthMiddlewareFunc(config.JWTManager))
+	protectedCommentRouter.HandleFunc("/blogposts/{blogPostId}/comments", config.CommentController.CreateComment).Methods("POST")
+	protectedCommentRouter.HandleFunc("/comments/{commentId}", config.CommentController.UpdateComment).Methods("PUT")
+	protectedCommentRouter.HandleFunc("/comments/{commentId}", config.CommentController.DeleteComment).Methods("DELETE")
+
+	// WebSocket endpoint (public - can be accessed by anyone)
+	router.HandleFunc("/ws", config.WebSocketHandler.HandleWebSocket).Methods("GET")
 
 	return router
 }

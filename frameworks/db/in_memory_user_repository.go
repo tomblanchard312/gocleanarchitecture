@@ -98,6 +98,20 @@ func (r *InMemoryUserRepository) ExistsByUsername(username string) (bool, error)
 	return false, nil
 }
 
+func (r *InMemoryUserRepository) GetAll() ([]*entities.User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	users := make([]*entities.User, 0, len(r.users))
+	for _, user := range r.users {
+		// Return a copy to avoid external modifications
+		userCopy := *user
+		users = append(users, &userCopy)
+	}
+
+	return users, nil
+}
+
 func (r *InMemoryUserRepository) Delete(id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

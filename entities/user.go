@@ -9,6 +9,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// UserRole represents the role of a user in the system
+type UserRole string
+
+const (
+	RoleUser  UserRole = "user"
+	RoleAdmin UserRole = "admin"
+)
+
 type User struct {
 	ID           string
 	Username     string
@@ -17,6 +25,7 @@ type User struct {
 	FullName     string
 	Bio          string
 	AvatarURL    string
+	Role         UserRole
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
@@ -43,6 +52,7 @@ func NewUser(username, email, password, fullName string) (*User, error) {
 		Email:        strings.ToLower(strings.TrimSpace(email)),
 		PasswordHash: passwordHash,
 		FullName:     strings.TrimSpace(fullName),
+		Role:         RoleUser, // Default role is user
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}, nil
@@ -99,10 +109,40 @@ func (u *User) Sanitize() *User {
 		FullName:  u.FullName,
 		Bio:       u.Bio,
 		AvatarURL: u.AvatarURL,
+		Role:      u.Role,
 		CreatedAt: u.CreatedAt,
 		UpdatedAt: u.UpdatedAt,
 		// PasswordHash is intentionally omitted
 	}
+}
+
+// IsAdmin checks if the user has admin role
+func (u *User) IsAdmin() bool {
+	return u.Role == RoleAdmin
+}
+
+// IsUser checks if the user has regular user role
+func (u *User) IsUser() bool {
+	return u.Role == RoleUser
+}
+
+// SetRole sets the user's role (should only be called by admins)
+func (u *User) SetRole(role UserRole) error {
+	if role != RoleUser && role != RoleAdmin {
+		return errors.New("invalid role: must be 'user' or 'admin'")
+	}
+	u.Role = role
+	u.UpdatedAt = time.Now()
+	return nil
+}
+
+// ValidateRole checks if a role string is valid
+func ValidateRole(role string) error {
+	r := UserRole(role)
+	if r != RoleUser && r != RoleAdmin {
+		return errors.New("invalid role: must be 'user' or 'admin'")
+	}
+	return nil
 }
 
 // Private helper functions
@@ -162,4 +202,3 @@ func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(bytes), err
 }
-

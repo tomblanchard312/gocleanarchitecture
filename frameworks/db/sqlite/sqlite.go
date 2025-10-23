@@ -41,9 +41,36 @@ func InitDB(filepath string) (*sql.DB, error) {
 		full_name TEXT NOT NULL,
 		bio TEXT DEFAULT '',
 		avatar_url TEXT DEFAULT '',
+		role TEXT DEFAULT 'user' CHECK(role IN ('user', 'admin')),
 		created_at DATETIME NOT NULL,
 		updated_at DATETIME NOT NULL
 	)`)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create comments table
+	_, err = db.Exec(`
+	CREATE TABLE IF NOT EXISTS comments (
+		id TEXT PRIMARY KEY,
+		blog_post_id TEXT NOT NULL REFERENCES blog_posts(id) ON DELETE CASCADE,
+		author_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		content TEXT NOT NULL,
+		parent_id TEXT DEFAULT '',
+		created_at DATETIME NOT NULL,
+		updated_at DATETIME NOT NULL,
+		FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
+	)`)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create indexes for comments
+	_, err = db.Exec(`
+	CREATE INDEX IF NOT EXISTS idx_comments_blog_post_id ON comments(blog_post_id);
+	CREATE INDEX IF NOT EXISTS idx_comments_author_id ON comments(author_id);
+	CREATE INDEX IF NOT EXISTS idx_comments_parent_id ON comments(parent_id);
+	`)
 	if err != nil {
 		return nil, err
 	}

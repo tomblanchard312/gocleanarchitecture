@@ -8,6 +8,7 @@ import (
 	"gocleanarchitecture/frameworks/db/supabase"
 	"gocleanarchitecture/frameworks/logger"
 	"gocleanarchitecture/frameworks/web"
+	"gocleanarchitecture/frameworks/websocket"
 	"gocleanarchitecture/interfaces"
 	"gocleanarchitecture/usecases"
 	"log"
@@ -36,6 +37,7 @@ func main() {
 	// Create repositories based on configuration
 	var blogPostRepo interfaces.BlogPostRepository
 	var userRepo interfaces.UserRepository
+	var commentRepo interfaces.CommentRepository
 
 	switch strings.ToLower(cfg.DBType) {
 	case "supabase":
@@ -44,10 +46,12 @@ func main() {
 		}
 		blogPostRepo = supabase.NewSupabaseBlogPostRepository(cfg.SupabaseURL, cfg.SupabaseKey)
 		userRepo = supabase.NewSupabaseUserRepository(cfg.SupabaseURL, cfg.SupabaseKey)
+		commentRepo = supabase.NewSupabaseCommentRepository(cfg.SupabaseURL, cfg.SupabaseKey)
 		customLogger.Info("Using Supabase repository", logger.Field("url", cfg.SupabaseURL))
 	case "inmemory":
 		blogPostRepo = db.NewInMemoryBlogPostRepository()
 		userRepo = db.NewInMemoryUserRepository()
+		commentRepo = db.NewInMemoryCommentRepository()
 		customLogger.Info("Using in-memory repository")
 		customLogger.Warn("In-memory database: data will be lost on restart")
 	case "sqlite":
@@ -60,6 +64,7 @@ func main() {
 		defer sqliteDB.Close()
 		blogPostRepo = sqlite.NewSQLiteBlogPostRepository(sqliteDB)
 		userRepo = sqlite.NewSQLiteUserRepository(sqliteDB)
+		commentRepo = sqlite.NewSQLiteCommentRepository(sqliteDB)
 		customLogger.Info("Using SQLite repository", logger.Field("path", cfg.DBPath))
 	}
 
@@ -70,16 +75,40 @@ func main() {
 	// Create adapters and use cases with proper dependency injection
 	useCaseLogger := logger.NewUseCaseLoggerAdapter(customLogger)
 
+	// Initialize WebSocket hub
+	wsHub := websocket.NewHub()
+	go wsHub.Run() // Start hub in a goroutine
+	customLogger.Info("WebSocket hub started")
+
 	// Blog post use case
 	blogPostUseCase := usecases.NewBlogPostUseCase(blogPostRepo, useCaseLogger)
-	blogPostController := &interfaces.BlogPostController{BlogPostUseCase: blogPostUseCase}
+	blogPostController := &interfaces.BlogPostController{
+		BlogPostUseCase: blogPostUseCase,
+		WebSocketHub:    wsHub,
+	}
+
+	// Comment use case
+	commentUseCase := usecases.NewCommentUseCase(commentRepo, blogPostRepo, userRepo, useCaseLogger)
+	commentController := &interfaces.CommentController{
+		CommentUseCase: commentUseCase,
+		WebSocketHub:   wsHub,
+	}
+
+	// WebSocket handler
+	wsHandler := interfaces.NewWebSocketHandler(wsHub)
 
 	// Auth use case (only if user repository is available)
 	var authController *interfaces.AuthController
+	var adminController *interfaces.AdminController
 	if userRepo != nil {
 		authUseCase := usecases.NewAuthUseCase(userRepo, tokenGenerator, useCaseLogger)
 		authController = &interfaces.AuthController{AuthUseCase: authUseCase}
-		customLogger.Info("Authentication enabled")
+
+		// Admin use case
+		adminUseCase := usecases.NewAdminUseCase(userRepo, useCaseLogger)
+		adminController = interfaces.NewAdminController(adminUseCase)
+
+		customLogger.Info("Authentication and admin features enabled")
 	} else {
 		customLogger.Warn("Authentication disabled - user repository not available")
 	}
@@ -88,6 +117,10 @@ func main() {
 	routerConfig := &web.RouterConfig{
 		BlogPostController: blogPostController,
 		AuthController:     authController,
+		AdminController:    adminController,
+		CommentController:  commentController,
+		WebSocketHandler:   wsHandler,
+		UserRepo:           userRepo,
 		JWTManager:         jwtManager,
 		Logger:             customLogger,
 	}

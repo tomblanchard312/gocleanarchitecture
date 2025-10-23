@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     full_name TEXT,
     bio TEXT,
     avatar_url TEXT,
+    role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at DESC);
 
 -- Enable Row Level Security (RLS) - recommended for security
@@ -32,11 +34,16 @@ CREATE POLICY "Allow public read access to profiles" ON users
     FOR SELECT 
     USING (true);
 
--- Allow users to update their own profile
+-- Allow users to update their own profile (but not their role)
 CREATE POLICY "Users can update own profile" ON users
     FOR UPDATE 
     USING (auth.uid()::text = id)
-    WITH CHECK (auth.uid()::text = id);
+    WITH CHECK (auth.uid()::text = id AND role = OLD.role);
+
+-- Allow admins to update any user (including roles)
+CREATE POLICY "Admins can update any user" ON users
+    FOR UPDATE
+    USING ((SELECT role FROM users WHERE id = auth.uid()::text) = 'admin');
 
 -- Allow anyone to create an account (registration)
 CREATE POLICY "Allow public registration" ON users
@@ -80,6 +87,7 @@ SELECT
     full_name,
     bio,
     avatar_url,
+    role,
     created_at
 FROM users;
 

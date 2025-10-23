@@ -18,20 +18,20 @@ func NewSQLiteUserRepository(db *sql.DB) interfaces.UserRepository {
 
 func (r *SQLiteUserRepository) Save(user *entities.User) error {
 	_, err := r.DB.Exec(`
-		INSERT OR REPLACE INTO users (id, username, email, password_hash, full_name, bio, avatar_url, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, user.ID, user.Username, user.Email, user.PasswordHash, user.FullName, user.Bio, user.AvatarURL, user.CreatedAt, user.UpdatedAt)
+		INSERT OR REPLACE INTO users (id, username, email, password_hash, full_name, bio, avatar_url, role, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, user.ID, user.Username, user.Email, user.PasswordHash, user.FullName, user.Bio, user.AvatarURL, user.Role, user.CreatedAt, user.UpdatedAt)
 	return err
 }
 
 func (r *SQLiteUserRepository) FindByID(id string) (*entities.User, error) {
 	user := &entities.User{}
 	err := r.DB.QueryRow(`
-		SELECT id, username, email, password_hash, full_name, bio, avatar_url, created_at, updated_at
+		SELECT id, username, email, password_hash, full_name, bio, avatar_url, role, created_at, updated_at
 		FROM users WHERE id = ?
 	`, id).Scan(
 		&user.ID, &user.Username, &user.Email, &user.PasswordHash,
-		&user.FullName, &user.Bio, &user.AvatarURL, &user.CreatedAt, &user.UpdatedAt,
+		&user.FullName, &user.Bio, &user.AvatarURL, &user.Role, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -45,11 +45,11 @@ func (r *SQLiteUserRepository) FindByID(id string) (*entities.User, error) {
 func (r *SQLiteUserRepository) FindByEmail(email string) (*entities.User, error) {
 	user := &entities.User{}
 	err := r.DB.QueryRow(`
-		SELECT id, username, email, password_hash, full_name, bio, avatar_url, created_at, updated_at
+		SELECT id, username, email, password_hash, full_name, bio, avatar_url, role, created_at, updated_at
 		FROM users WHERE email = ?
 	`, email).Scan(
 		&user.ID, &user.Username, &user.Email, &user.PasswordHash,
-		&user.FullName, &user.Bio, &user.AvatarURL, &user.CreatedAt, &user.UpdatedAt,
+		&user.FullName, &user.Bio, &user.AvatarURL, &user.Role, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -63,11 +63,11 @@ func (r *SQLiteUserRepository) FindByEmail(email string) (*entities.User, error)
 func (r *SQLiteUserRepository) FindByUsername(username string) (*entities.User, error) {
 	user := &entities.User{}
 	err := r.DB.QueryRow(`
-		SELECT id, username, email, password_hash, full_name, bio, avatar_url, created_at, updated_at
+		SELECT id, username, email, password_hash, full_name, bio, avatar_url, role, created_at, updated_at
 		FROM users WHERE username = ?
 	`, username).Scan(
 		&user.ID, &user.Username, &user.Email, &user.PasswordHash,
-		&user.FullName, &user.Bio, &user.AvatarURL, &user.CreatedAt, &user.UpdatedAt,
+		&user.FullName, &user.Bio, &user.AvatarURL, &user.Role, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -94,6 +94,33 @@ func (r *SQLiteUserRepository) ExistsByUsername(username string) (bool, error) {
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func (r *SQLiteUserRepository) GetAll() ([]*entities.User, error) {
+	rows, err := r.DB.Query(`
+		SELECT id, username, email, password_hash, full_name, bio, avatar_url, role, created_at, updated_at
+		FROM users
+		ORDER BY created_at DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*entities.User
+	for rows.Next() {
+		user := &entities.User{}
+		err := rows.Scan(
+			&user.ID, &user.Username, &user.Email, &user.PasswordHash,
+			&user.FullName, &user.Bio, &user.AvatarURL, &user.Role, &user.CreatedAt, &user.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	return users, rows.Err()
 }
 
 func (r *SQLiteUserRepository) Delete(id string) error {

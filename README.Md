@@ -108,8 +108,12 @@ Clean Architecture promotes separation of concerns, making your codebase easier 
 
 ## Features
 
-- CRUD operations for blog posts
+- **CRUD operations for blog posts** with author tracking and ownership validation
 - **User Authentication & Authorization**: JWT-based authentication with secure password hashing
+- **Role-Based Access Control (RBAC)**: Admin and user roles with permission management
+- **Comments System**: Hierarchical comments with replies on blog posts
+- **Real-time Updates**: WebSocket support for live notifications of new posts and comments
+- **OAuth2 Social Login**: Integration with Google and GitHub (framework ready)
 - Clean Architecture implementation
 - **Multiple Database Backends**: SQLite, Supabase, In-Memory
 - Custom error handling with domain validation
@@ -179,9 +183,40 @@ Clean Architecture promotes separation of concerns, making your codebase easier 
 
 ### Blog Post Endpoints (Protected - Requires JWT Token)
 
-- `POST /blogposts`: Create a new blog post
-- `PUT /blogposts/{id}`: Update a blog post
-- `DELETE /blogposts/{id}`: Delete a blog post
+- `POST /blogposts`: Create a new blog post (automatically assigned to authenticated user)
+- `PUT /blogposts/{id}`: Update a blog post (only if you're the author)
+- `DELETE /blogposts/{id}`: Delete a blog post (only if you're the author)
+
+### Comment Endpoints (Public - Read Only)
+
+- `GET /blogposts/{blogPostId}/comments`: Get all comments for a blog post
+- `GET /comments/{commentId}/replies`: Get all replies to a specific comment
+
+### Comment Endpoints (Protected - Requires JWT Token)
+
+- `POST /blogposts/{blogPostId}/comments`: Create a new comment on a blog post
+- `PUT /comments/{commentId}`: Update your own comment
+- `DELETE /comments/{commentId}`: Delete your own comment
+
+### Admin Endpoints (Protected - Requires Admin Role)
+
+- `GET /admin/users`: List all users
+- `GET /admin/users/{id}`: Get detailed user information
+- `PUT /admin/users/{id}/role`: Update a user's role (admin/user)
+- `DELETE /admin/users/{id}`: Delete a user account
+
+### WebSocket Endpoint
+
+- `GET /ws`: WebSocket connection for real-time updates
+  - Broadcasts new blog posts when created
+  - Broadcasts new comments when posted
+
+### OAuth2 Endpoints (Coming Soon)
+
+- `GET /auth/google`: Initiate Google OAuth login
+- `GET /auth/google/callback`: Google OAuth callback
+- `GET /auth/github`: Initiate GitHub OAuth login
+- `GET /auth/github/callback`: GitHub OAuth callback
 
 ### Example: Register a User
 
@@ -277,9 +312,11 @@ This project uses custom error types defined in the `errors` package. All errors
 ## Dependencies
 
 - [Gorilla Mux](https://github.com/gorilla/mux) for HTTP routing
+- [Gorilla WebSocket](https://github.com/gorilla/websocket) for WebSocket connections
 - [Viper](https://github.com/spf13/viper) for configuration management
 - [JWT-Go](https://github.com/golang-jwt/jwt) for JWT token generation and validation
 - [bcrypt](https://golang.org/x/crypto/bcrypt) for secure password hashing
+- [OAuth2](https://golang.org/x/oauth2) for social login integration
 - [godotenv](https://github.com/joho/godotenv) for loading environment variables
 - [Google UUID](https://github.com/google/uuid) for generating unique identifiers
 - [Supabase Go Client](https://github.com/supabase-community/supabase-go) for Supabase integration
@@ -307,6 +344,15 @@ The application can be configured using environment variables. Copy `.env.exampl
 - `JWT_SECRET`: Secret key for JWT token signing (change in production!)
 - `JWT_TOKEN_DURATION_HOURS`: Token expiration time in hours (default: 24)
 
+### OAuth2 Configuration (Optional - for social login)
+- `BASE_URL`: Base URL for OAuth callbacks (default: "http://localhost:8080")
+- `GOOGLE_CLIENT_ID`: Google OAuth2 Client ID
+- `GOOGLE_CLIENT_SECRET`: Google OAuth2 Client Secret
+- `GOOGLE_REDIRECT_URL`: Google OAuth callback URL (default: "http://localhost:8080/auth/google/callback")
+- `GITHUB_CLIENT_ID`: GitHub OAuth2 Client ID
+- `GITHUB_CLIENT_SECRET`: GitHub OAuth2 Client Secret
+- `GITHUB_REDIRECT_URL`: GitHub OAuth callback URL (default: "http://localhost:8080/auth/github/callback")
+
 ## API Documentation
 
 ### Swagger/OpenAPI
@@ -329,6 +375,13 @@ Import the `Go-Clean-Architecture-Blog.postman_collection.json` file into Postma
    - `jwt_token`: Auto-saved after login/register
    - `user_id`: Auto-saved after authentication
    - `post_id`: Auto-saved after creating a post
+
+### Feature Documentation
+For detailed documentation on advanced features, see [`FEATURES.md`](FEATURES.md):
+- **Role-Based Access Control (RBAC)**: Admin and user roles
+- **Comments System**: Hierarchical comments with replies
+- **WebSocket Real-time Updates**: Live notifications
+- **OAuth2 Social Login**: Google and GitHub integration (framework)
 
 ## Deployment
 
@@ -403,9 +456,10 @@ Import the `Go-Clean-Architecture-Blog.postman_collection.json` file into Postma
 1. **Set up Supabase project**:
    - Create a project at [supabase.com](https://supabase.com)
    - Note your project URL and anon key
-   - Run the SQL scripts in Supabase SQL Editor:
-     - `supabase_users_schema.sql`
-     - `supabase_schema.sql`
+   - Run the SQL scripts in Supabase SQL Editor (in order):
+     - `supabase_users_schema.sql` (users table with RBAC)
+     - `supabase_schema.sql` (blog posts table)
+     - `supabase_comments_schema.sql` (comments table)
 
 2. **Build the application**:
    ```bash
@@ -505,6 +559,16 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
+    
+    # WebSocket support
+    location /ws {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 86400;
+    }
 }
 ```
 
@@ -567,14 +631,20 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Future Improvements
 
-- Add role-based access control (RBAC) for admin/user permissions
+- ✅ ~~Add role-based access control (RBAC) for admin/user permissions~~ **DONE**
+- ✅ ~~Implement blog post comments~~ **DONE**
+- ✅ ~~Add WebSocket real-time updates~~ **DONE**
+- ✅ ~~Add OAuth2 framework for social login~~ **DONE** (Google/GitHub ready)
 - Implement password reset via email
-- Add social login (OAuth2)
-- Implement blog post comments and likes
-- Add pagination for blog post listings
+- Add blog post likes and reactions
+- Add pagination for blog post and comment listings
 - Implement full-text search for blog posts
 - Add user follow/unfollow functionality
 - Implement rate limiting for API endpoints
+- Add email notifications for comments and replies
+- Add image upload support for blog posts and user avatars
+- Implement comment moderation for admins
+- Add analytics and metrics tracking
 
 ### Licensing
 

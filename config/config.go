@@ -7,17 +7,24 @@ import (
 )
 
 type Config struct {
-	ServerPort       string
-	DBPath           string
-	LogLevel         string
-	LogFile          string
-	DBType           string // "sqlite", "supabase", "inmemory"
-	SupabaseURL      string
-	SupabaseKey      string
-	SupabaseUser     string // Database username for Supabase
-	SupabasePass     string // Database password for Supabase
-	JWTSecret        string
-	JWTTokenDuration time.Duration
+	ServerPort         string
+	DBPath             string
+	LogLevel           string
+	LogFile            string
+	DBType             string // "sqlite", "supabase", "inmemory"
+	SupabaseURL        string
+	SupabaseKey        string
+	SupabaseUser       string // Database username for Supabase
+	SupabasePass       string // Database password for Supabase
+	JWTSecret          string
+	JWTTokenDuration   time.Duration
+	GoogleClientID     string
+	GoogleClientSecret string
+	GoogleRedirectURL  string
+	GitHubClientID     string
+	GitHubClientSecret string
+	GitHubRedirectURL  string
+	BaseURL            string // Base URL for OAuth callbacks
 }
 
 func Load() (*Config, error) {
@@ -28,20 +35,30 @@ func Load() (*Config, error) {
 	viper.SetDefault("DB_TYPE", "sqlite")
 	viper.SetDefault("JWT_SECRET", "your-secret-key-change-this-in-production")
 	viper.SetDefault("JWT_TOKEN_DURATION_HOURS", 24)
+	viper.SetDefault("BASE_URL", "http://localhost:8080")
+	viper.SetDefault("GOOGLE_REDIRECT_URL", "http://localhost:8080/auth/google/callback")
+	viper.SetDefault("GITHUB_REDIRECT_URL", "http://localhost:8080/auth/github/callback")
 
 	viper.AutomaticEnv()
 
 	return &Config{
-		ServerPort:       viper.GetString("SERVER_PORT"),
-		DBPath:           viper.GetString("DB_PATH"),
-		LogLevel:         viper.GetString("LOG_LEVEL"),
-		LogFile:          viper.GetString("LOG_FILE"),
-		DBType:           viper.GetString("DB_TYPE"),
-		SupabaseURL:      viper.GetString("SUPABASE_URL"),
-		SupabaseKey:      viper.GetString("SUPABASE_KEY"),
-		SupabaseUser:     viper.GetString("SUPABASE_USER"),
-		SupabasePass:     viper.GetString("SUPABASE_PASS"),
-		JWTSecret:        viper.GetString("JWT_SECRET"),
-		JWTTokenDuration: time.Duration(viper.GetInt("JWT_TOKEN_DURATION_HOURS")) * time.Hour,
+		ServerPort:         viper.GetString("SERVER_PORT"),
+		DBPath:             viper.GetString("DB_PATH"),
+		LogLevel:           viper.GetString("LOG_LEVEL"),
+		LogFile:            viper.GetString("LOG_FILE"),
+		DBType:             viper.GetString("DB_TYPE"),
+		SupabaseURL:        viper.GetString("SUPABASE_URL"),
+		SupabaseKey:        viper.GetString("SUPABASE_KEY"),
+		SupabaseUser:       viper.GetString("SUPABASE_USER"),
+		SupabasePass:       viper.GetString("SUPABASE_PASS"),
+		JWTSecret:          viper.GetString("JWT_SECRET"),
+		JWTTokenDuration:   time.Duration(viper.GetInt("JWT_TOKEN_DURATION_HOURS")) * time.Hour,
+		GoogleClientID:     viper.GetString("GOOGLE_CLIENT_ID"),
+		GoogleClientSecret: viper.GetString("GOOGLE_CLIENT_SECRET"),
+		GoogleRedirectURL:  viper.GetString("GOOGLE_REDIRECT_URL"),
+		GitHubClientID:     viper.GetString("GITHUB_CLIENT_ID"),
+		GitHubClientSecret: viper.GetString("GITHUB_CLIENT_SECRET"),
+		GitHubRedirectURL:  viper.GetString("GITHUB_REDIRECT_URL"),
+		BaseURL:            viper.GetString("BASE_URL"),
 	}, nil
 }
