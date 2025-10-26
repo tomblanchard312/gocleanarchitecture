@@ -5,6 +5,7 @@ import (
 	"gocleanarchitecture/frameworks/logger"
 	"gocleanarchitecture/frameworks/web/middleware"
 	"gocleanarchitecture/interfaces"
+	"net/http"
 
 	"github.com/gorilla/mux"
 )
@@ -15,6 +16,7 @@ type RouterConfig struct {
 	AdminController    *interfaces.AdminController
 	CommentController  *interfaces.CommentController
 	WebSocketHandler   *interfaces.WebSocketHandler
+	OAuth2Controller   *interfaces.OAuth2Controller
 	UserRepo           interfaces.UserRepository
 	JWTManager         *auth.JWTManager
 	Logger             logger.Logger
@@ -39,6 +41,14 @@ func NewRouter(config *RouterConfig) *mux.Router {
 	protectedAuthRouter.HandleFunc("/profile", config.AuthController.GetProfile).Methods("GET")
 	protectedAuthRouter.HandleFunc("/profile", config.AuthController.UpdateProfile).Methods("PUT")
 	protectedAuthRouter.HandleFunc("/change-password", config.AuthController.ChangePassword).Methods("POST")
+
+	// OAuth2 routes (public - no authentication required)
+	if config.OAuth2Controller != nil {
+		authRouter.HandleFunc("/google", config.OAuth2Controller.InitiateGoogleLogin).Methods("GET")
+		authRouter.HandleFunc("/google/callback", config.OAuth2Controller.GoogleCallback).Methods("GET")
+		authRouter.HandleFunc("/github", config.OAuth2Controller.InitiateGitHubLogin).Methods("GET")
+		authRouter.HandleFunc("/github/callback", config.OAuth2Controller.GitHubCallback).Methods("GET")
+	}
 
 	// Blog post routes (public for reading, protected for writing)
 	router.HandleFunc("/blogposts", config.BlogPostController.GetAllBlogPosts).Methods("GET")
@@ -73,6 +83,16 @@ func NewRouter(config *RouterConfig) *mux.Router {
 
 	// WebSocket endpoint (public - can be accessed by anyone)
 	router.HandleFunc("/ws", config.WebSocketHandler.HandleWebSocket).Methods("GET")
+
+	// Swagger/API Documentation endpoint
+	router.HandleFunc("/swagger", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./api-documentation.yaml")
+	}).Methods("GET")
+
+	// Swagger UI redirect
+	router.HandleFunc("/api/docs", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://editor.swagger.io/?url=http://localhost:8080/swagger", http.StatusTemporaryRedirect)
+	}).Methods("GET")
 
 	return router
 }

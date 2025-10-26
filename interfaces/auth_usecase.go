@@ -14,5 +14,7 @@ type AuthUseCase interface {
 	UpdateProfile(userID, fullName, bio, avatarURL string) (*entities.User, error)
 	ChangePassword(userID, oldPassword, newPassword string) error
 	GetUserByUsername(username string) (*entities.User, error)
+	GetUserByEmail(email string) (*entities.User, error)
+	GenerateTokenForUser(userID string) (string, error)
 }
 

@@ -205,3 +205,40 @@ func (u *AuthUseCase) GetUserByUsername(username string) (*entities.User, error)
 
 	return user.Sanitize(), nil
 }
+
+// GetUserByEmail retrieves a user by email (for OAuth2)
+func (u *AuthUseCase) GetUserByEmail(email string) (*entities.User, error) {
+	user, err := u.UserRepo.FindByEmail(email)
+	if err != nil {
+		u.Logger.Error("Failed to find user by email", "error", err, "email", email)
+		return nil, errors.New("failed to retrieve user")
+	}
+
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	return user.Sanitize(), nil
+}
+
+// GenerateTokenForUser generates a JWT token for an existing user (for OAuth2)
+func (u *AuthUseCase) GenerateTokenForUser(userID string) (string, error) {
+	user, err := u.UserRepo.FindByID(userID)
+	if err != nil {
+		u.Logger.Error("Failed to find user for token generation", "error", err, "userID", userID)
+		return "", errors.New("failed to retrieve user")
+	}
+
+	if user == nil {
+		return "", errors.New("user not found")
+	}
+
+	// Generate JWT token
+	token, err := u.TokenGenerator.GenerateToken(user.ID, user.Username, user.Email)
+	if err != nil {
+		u.Logger.Error("Failed to generate token", "error", err)
+		return "", errors.New("failed to generate authentication token")
+	}
+
+	return token, nil
+}

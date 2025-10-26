@@ -113,7 +113,7 @@ Clean Architecture promotes separation of concerns, making your codebase easier 
 - **Role-Based Access Control (RBAC)**: Admin and user roles with permission management
 - **Comments System**: Hierarchical comments with replies on blog posts
 - **Real-time Updates**: WebSocket support for live notifications of new posts and comments
-- **OAuth2 Social Login**: Integration with Google and GitHub (framework ready)
+- **OAuth2 Social Login**: Fully integrated with Google and GitHub
 - Clean Architecture implementation
 - **Multiple Database Backends**: SQLite, Supabase, In-Memory
 - Custom error handling with domain validation
@@ -211,12 +211,33 @@ Clean Architecture promotes separation of concerns, making your codebase easier 
   - Broadcasts new blog posts when created
   - Broadcasts new comments when posted
 
-### OAuth2 Endpoints (Coming Soon)
+### OAuth2 Social Login Endpoints
 
 - `GET /auth/google`: Initiate Google OAuth login
-- `GET /auth/google/callback`: Google OAuth callback
+- `GET /auth/google/callback`: Google OAuth callback  
 - `GET /auth/github`: Initiate GitHub OAuth login
 - `GET /auth/github/callback`: GitHub OAuth callback
+
+**Setup**:
+1. Create OAuth2 applications:
+   - **Google**: [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials
+   - **GitHub**: [GitHub Settings](https://github.com/settings/developers) → OAuth Apps
+
+2. Configure `.env` file:
+```env
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URL=http://localhost:8080/auth/google/callback
+
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+GITHUB_REDIRECT_URL=http://localhost:8080/auth/github/callback
+```
+
+**Usage**:
+- Direct users to `http://localhost:8080/auth/google` or `/auth/github`
+- After authentication, the callback will return a JSON response with user and JWT token
+- The app automatically creates a new user account or logs in an existing user
 
 ### Example: Register a User
 
@@ -625,6 +646,37 @@ Consider adding health check endpoints and integrating with:
 - **ELK Stack** for log aggregation
 - **Sentry** for error tracking
 
+## 🎨 Frontend UI
+
+A **beautiful, modern frontend** is available in the `frontend/` directory!
+
+### Features:
+- ✨ **Stunning modern design** with glassmorphism and gradients
+- 🌗 **Dark/Light mode** with smooth transitions
+- ⚡ **Real-time updates** via WebSocket
+- 📱 **Fully responsive** mobile-first design
+- 🎭 **Smooth animations** powered by Framer Motion
+- 🔐 **JWT authentication** with beautiful login/register pages
+
+### Quick Start:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Then visit `http://localhost:5173`
+
+See `frontend/README.md` and `frontend/QUICKSTART.md` for full documentation.
+
+### Tech Stack:
+- React 18 + TypeScript
+- Vite (lightning-fast builds)
+- Tailwind CSS v3
+- Framer Motion
+- TanStack Query
+- React Router
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -634,7 +686,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - ✅ ~~Add role-based access control (RBAC) for admin/user permissions~~ **DONE**
 - ✅ ~~Implement blog post comments~~ **DONE**
 - ✅ ~~Add WebSocket real-time updates~~ **DONE**
-- ✅ ~~Add OAuth2 framework for social login~~ **DONE** (Google/GitHub ready)
+- ✅ ~~Add OAuth2 social login~~ **DONE** (Google & GitHub fully integrated)
 - Implement password reset via email
 - Add blog post likes and reactions
 - Add pagination for blog post and comment listings

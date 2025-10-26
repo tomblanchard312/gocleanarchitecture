@@ -11,9 +11,12 @@ import (
 	"gocleanarchitecture/frameworks/websocket"
 	"gocleanarchitecture/interfaces"
 	"gocleanarchitecture/usecases"
+
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/rs/cors"
 
 	"github.com/joho/godotenv"
 )
@@ -100,6 +103,7 @@ func main() {
 	// Auth use case (only if user repository is available)
 	var authController *interfaces.AuthController
 	var adminController *interfaces.AdminController
+	var oauth2Controller *interfaces.OAuth2Controller
 	if userRepo != nil {
 		authUseCase := usecases.NewAuthUseCase(userRepo, tokenGenerator, useCaseLogger)
 		authController = &interfaces.AuthController{AuthUseCase: authUseCase}
@@ -107,6 +111,26 @@ func main() {
 		// Admin use case
 		adminUseCase := usecases.NewAdminUseCase(userRepo, useCaseLogger)
 		adminController = interfaces.NewAdminController(adminUseCase)
+
+		// OAuth2 providers (optional - only if configured)
+		var googleProvider *auth.OAuth2Provider
+		var githubProvider *auth.OAuth2Provider
+
+		if cfg.GoogleClientID != "" && cfg.GoogleClientSecret != "" {
+			googleProvider = auth.NewGoogleOAuth2Provider(cfg.GoogleClientID, cfg.GoogleClientSecret, cfg.GoogleRedirectURL)
+			customLogger.Info("Google OAuth2 enabled")
+		}
+
+		if cfg.GitHubClientID != "" && cfg.GitHubClientSecret != "" {
+			githubProvider = auth.NewGitHubOAuth2Provider(cfg.GitHubClientID, cfg.GitHubClientSecret, cfg.GitHubRedirectURL)
+			customLogger.Info("GitHub OAuth2 enabled")
+		}
+
+		// Create OAuth2 controller if at least one provider is configured
+		if googleProvider != nil || githubProvider != nil {
+			oauth2Controller = interfaces.NewOAuth2Controller(googleProvider, githubProvider, authUseCase)
+			customLogger.Info("OAuth2 social login enabled")
+		}
 
 		customLogger.Info("Authentication and admin features enabled")
 	} else {
@@ -120,12 +144,25 @@ func main() {
 		AdminController:    adminController,
 		CommentController:  commentController,
 		WebSocketHandler:   wsHandler,
+		OAuth2Controller:   oauth2Controller,
 		UserRepo:           userRepo,
 		JWTManager:         jwtManager,
 		Logger:             customLogger,
 	}
 	router := web.NewRouter(routerConfig)
 
+	// Add CORS middleware with WebSocket support
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+		// Allow WebSocket upgrade headers
+		ExposedHeaders: []string{"*"},
+	})
+
+	handler := corsHandler.Handler(router)
+
 	customLogger.Info("Starting server", logger.Field("port", cfg.ServerPort))
-	log.Fatal(http.ListenAndServe(cfg.ServerPort, router))
+	log.Fatal(http.ListenAndServe(cfg.ServerPort, handler))
 }
