@@ -1,0 +1,25 @@
+name: Supabase Schema Check
+
+on:
+  push:
+    paths:
+      - 'supabase*_schema.sql'
+  pull_request:
+    paths:
+      - 'supabase*_schema.sql'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate SQL syntax
+        run: |
+          for file in supabase*_schema.sql; do
+            if [ -f "$file" ]; then
+              sqlfluff lint "$file" || exit 1
+            fi
+          done
+        shell: bash
+      - name: Install sqlfluff
+        run: pip install sqlfluff
