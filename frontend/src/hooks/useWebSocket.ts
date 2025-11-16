@@ -52,7 +52,6 @@ export const useWebSocket = () => {
       }
 
       ws.current.onerror = (error) => {
-        // error param is unused, remove it
         console.log('WebSocket connection not available (optional feature)')
       }
     }
