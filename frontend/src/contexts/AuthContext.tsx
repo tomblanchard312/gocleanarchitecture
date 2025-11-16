@@ -1,32 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { API_BASE_URL } from '../lib/utils'
+import type { AuthContextType, RegisterData, User } from './auth.types'
 
-interface User {
-  id: string
-  username: string
-  email: string
-  full_name: string
-  role: string
-  avatar_url?: string
-  created_at: string
-}
-
-interface AuthContextType {
-  user: User | null
-  token: string | null
-  login: (emailOrUsername: string, password: string) => Promise<void>
-  register: (data: RegisterData) => Promise<void>
-  logout: () => void
-  loading: boolean
-}
-
-interface RegisterData {
-  username: string
-  email: string
-  password: string
-  full_name: string
-}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 

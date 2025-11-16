@@ -3,7 +3,7 @@ import { WS_URL } from '../lib/utils'
 
 interface WebSocketMessage {
   type: string
-  data: any
+  data: Record<string, unknown>
 }
 
 export const useWebSocket = () => {
@@ -39,8 +39,8 @@ export const useWebSocket = () => {
               })
             }
           }
-        } catch (error) {
-          console.error('Failed to parse WebSocket message:', error)
+        } catch (err) {
+          console.error('Failed to parse WebSocket message:', err)
         }
       }
 
@@ -52,6 +52,7 @@ export const useWebSocket = () => {
       }
 
       ws.current.onerror = (error) => {
+        // error param is unused, remove it
         console.log('WebSocket connection not available (optional feature)')
       }
     }

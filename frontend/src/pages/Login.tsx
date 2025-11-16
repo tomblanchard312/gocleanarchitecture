@@ -22,8 +22,12 @@ export const Login = () => {
     try {
       await login(emailOrUsername, password)
       navigate('/')
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('Unknown error')
+      }
     } finally {
       setLoading(false)
     }
