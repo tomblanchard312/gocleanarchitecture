@@ -60,7 +60,7 @@ func (c *OAuth2Controller) InitiateGoogleLogin(w http.ResponseWriter, r *http.Re
 		Value:    state,
 		Expires:  time.Now().Add(10 * time.Minute),
 		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
+		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 	})
 
@@ -94,6 +94,7 @@ func (c *OAuth2Controller) GoogleCallback(w http.ResponseWriter, r *http.Request
 		Value:    "",
 		Expires:  time.Now().Add(-1 * time.Hour),
 		HttpOnly: true,
+		Secure:   true,
 	})
 
 	// Exchange code for token
