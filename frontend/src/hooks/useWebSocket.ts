@@ -51,7 +51,7 @@ export const useWebSocket = () => {
         // setTimeout(connect, 5000)
       }
 
-      ws.current.onerror = (error) => {
+      ws.current.onerror = () => {
         console.log('WebSocket connection not available (optional feature)')
       }
     }
